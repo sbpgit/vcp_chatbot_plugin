@@ -1,0 +1,221 @@
+<mvc:View controllerName="chat.newchatbot.controller.Home"
+    xmlns:mvc="sap.ui.core.mvc"
+    xmlns="sap.m"
+    xmlns:l="sap.ui.layout"
+    xmlns:core="sap.ui.core"
+    displayBlock="true">
+    
+    <!-- App Container -->
+    <App id="app1">
+        <pages>
+            <Page 
+                id="mainPage"
+                showHeader="false"
+                enableScrolling="false"
+                class="sapUiContentPadding">
+                
+                <!-- Floating Chatbot Button -->
+                <Button
+                    id="chatbotFloatingButton"
+                    icon="sap-icon://customer-service"
+                    type="Emphasized"
+                    press="onToggleChat"
+                    tooltip="{i18n>openChat}"
+                    class="chatbotFloatingButton" />
+                
+                <!-- Chat Window Popover -->
+                <Popover
+                    id="chatPopover"
+                    title="{chatModel>/config/botName}"
+                    placement="Top"
+                    contentWidth="380px"
+                    contentHeight="500px"
+                    showHeader="false"
+                    verticalScrolling="false"
+                    class="chatPopover">
+                    
+                    <!-- Chat Header -->
+                    <customHeader>
+                        <l:VerticalLayout id="_IDGenVerticalLayout1" width="100%">
+                            <Bar id="_IDGenBar" class="chatHeader">
+                                <contentLeft>
+                                    <HBox id="_IDGenHBox" alignItems="Center">
+                                        <Avatar id="_IDGenAvatar" 
+                                            src="sap-icon://customer-service"
+                                            displaySize="XS"
+                                            backgroundColor="Accent6"
+                                            class="sapUiTinyMarginEnd" />
+                                        <VBox id="_IDGenVBox">
+                                            <Text id="_IDGenText" text="{chatModel>/config/botName}" class="chatBotName" />
+                                            <HBox id="_IDGenHBox1" alignItems="Center">
+                                                <core:Icon id="_IDGenIcon" 
+                                                    src="sap-icon://circle-task-2"
+                                                    size="0.75rem"
+                                                    color="Positive"
+                                                    class="sapUiTinyMarginEnd" />
+                                                <Text id="_IDGenText1" text="{i18n>online}" class="chatStatus" />
+                                            </HBox>
+                                        </VBox>
+                                    </HBox>
+                                </contentLeft>
+                                <contentRight>
+                                    <Button id="_IDGenButton"
+                                        icon="sap-icon://refresh"
+                                        type="Transparent"
+                                        press="onRefreshChat"
+                                        tooltip="{i18n>refresh}" />
+                                    <Button id="_IDGenButton1"
+                                        icon="sap-icon://settings"
+                                        type="Transparent"
+                                        press="onOpenSettings"
+                                        tooltip="{i18n>settings}" />
+                                    <Button id="_IDGenButton2"
+                                        icon="sap-icon://decline"
+                                        type="Transparent"
+                                        press="onCloseChat"
+                                        tooltip="{i18n>close}" />
+                                </contentRight>
+                            </Bar>
+                        </l:VerticalLayout>
+                    </customHeader>
+                    
+                    <!-- Chat Content -->
+                    <l:VerticalLayout id="_IDGenVerticalLayout2" width="100%">
+                        
+                        <!-- Messages Container -->
+                        <ScrollContainer
+                            id="chatScrollContainer"
+                            height="350px"
+                            width="100%"
+                            vertical="true"
+                            horizontal="false"
+                            class="chatMessagesArea">
+                            
+                            <List
+                                id="messagesList"
+                                items="{chatModel>/messages}"
+                                showSeparators="None"
+                                backgroundDesign="Transparent"
+                                growing="true"
+                                growingThreshold="20">
+                                
+                                <CustomListItem id="_IDGenCustomListItem" class="messageItem">
+                                    <HBox id="_IDGenHBox2"
+                                        justifyContent="{= ${chatModel>type} === 'user' ? 'End' : 'Start' }"
+                                        class="sapUiTinyMargin">
+                                        
+                                        <!-- Bot Avatar (shown only for bot messages) -->
+                                        <Avatar id="_IDGenAvatar1"
+                                            visible="{= ${chatModel>type} === 'bot' }"
+                                            src="sap-icon://customer-service"
+                                            displaySize="XS"
+                                            backgroundColor="Accent6"
+                                            class="sapUiTinyMarginEnd" />
+                                        
+                                        <!-- Message Content -->
+                                        <VBox id="_IDGenVBox1" 
+                                            class="{= ${chatModel>type} === 'user' ? 'userMessageBox' : 'botMessageBox' }"
+                                            width="70%">
+                                            
+                                            <Text id="_IDGenText2"
+                                                text="{chatModel>text}"
+                                                class="{= ${chatModel>type} === 'user' ? 'userMessageText' : 'botMessageText' }" />
+                                            
+                                            <Label id="_IDGenLabel"
+                                                text="{
+                                                    path: 'chatModel>timestamp',
+                                                    formatter: '.formatter.formatTime'
+                                                }"
+                                                class="messageTimestamp" />
+                                        </VBox>
+                                        
+                                        <!-- User Avatar (shown only for user messages) -->
+                                        <Avatar id="_IDGenAvatar2"
+                                            visible="{= ${chatModel>type} === 'user' }"
+                                            displaySize="XS"
+                                            backgroundColor="Accent7"
+                                            class="sapUiTinyMarginBegin" />
+                                    </HBox>
+                                </CustomListItem>
+                            </List>
+                            
+                            <!-- Typing Indicator -->
+                            <HBox 
+                                id="typingIndicator"
+                                visible="{chatModel>/isTyping}"
+                                class="sapUiSmallMargin">
+                                <Avatar id="_IDGenAvatar3"
+                                    src="sap-icon://customer-service"
+                                    displaySize="XS"
+                                    backgroundColor="Accent6"
+                                    class="sapUiTinyMarginEnd" />
+                                <VBox id="_IDGenVBox2" class="typingIndicatorBox">
+                                    <Text id="_IDGenText3" text="{i18n>typing}" class="typingText" />
+                                </VBox>
+                            </HBox>
+                        </ScrollContainer>
+                        
+                        <!-- Quick Replies -->
+                        <HBox
+                            id="quickRepliesContainer"
+                            visible="{chatModel>/showQuickReplies}"
+                            wrap="Wrap"
+                            class="quickRepliesArea sapUiTinyMargin">
+                            <items>
+                                <Button id="_IDGenButton3"
+                                    text="Check Status"
+                                    type="Ghost"
+                                    press=".onQuickReply"
+                                    class="sapUiTinyMarginEnd sapUiTinyMarginBottom" />
+                                <Button id="_IDGenButton4"
+                                    text="View Reports"
+                                    type="Ghost"
+                                    press=".onQuickReply"
+                                    class="sapUiTinyMarginEnd sapUiTinyMarginBottom" />
+                                <Button id="_IDGenButton5"
+                                    text="Get Help"
+                                    type="Ghost"
+                                    press=".onQuickReply"
+                                    class="sapUiTinyMarginEnd sapUiTinyMarginBottom" />
+                            </items>
+                        </HBox>
+                        
+                        <!-- Input Area -->
+                        <l:VerticalLayout id="_IDGenVerticalLayout3" width="100%" class="chatInputArea">
+                            <Bar id="_IDGenBar1">
+                                <contentLeft>
+                                    <Input
+                                        id="chatInput"
+                                        placeholder="{i18n>typeMessage}"
+                                        value="{chatModel>/currentMessage}"
+                                        submit="onSendMessage"
+                                        width="280px"
+                                        class="chatInputField" />
+                                </contentLeft>
+                                <contentRight>
+                                    <Button
+                                        id="attachButton"
+                                        icon="sap-icon://attachment"
+                                        type="Transparent"
+                                        press="onAttachment"
+                                        tooltip="{i18n>attach}" />
+                                    <Button
+                                        id="sendButton"
+                                        icon="sap-icon://paper-plane"
+                                        type="Emphasized"
+                                        press="onSendMessage"
+                                        tooltip="{i18n>send}"
+                                        enabled="{= ${chatModel>/currentMessage} !== '' }" />
+                                </contentRight>
+                            </Bar>
+                        </l:VerticalLayout>
+                    </l:VerticalLayout>
+                </Popover>
+                
+                <!-- Settings Dialog Fragment -->
+                <core:Fragment fragmentName="chat.newchatbot.fragment.Settings" type="XML" />
+                
+            </Page>
+        </pages>
+    </App>
+</mvc:View>

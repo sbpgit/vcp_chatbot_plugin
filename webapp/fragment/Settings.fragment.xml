@@ -1,0 +1,63 @@
+<core:FragmentDefinition
+    xmlns="sap.m"
+    xmlns:core="sap.ui.core"
+    xmlns:l="sap.ui.layout">
+    
+    <Dialog
+        id="settingsDialog"
+        title="Chatbot Settings"
+        contentWidth="500px"
+        contentHeight="400px">
+        
+        <content>
+            <l:VerticalLayout id="_IDGenVerticalLayout" class="sapUiContentPadding" width="100%">
+                
+                <Label id="_IDGenLabel1" text="Bot Configuration" design="Bold" class="sapUiMediumMarginTop"/>
+                
+                <l:HorizontalLayout id="_IDGenHorizontalLayout" class="sapUiSmallMarginTop">
+                    <Label id="_IDGenLabel2" text="Bot Name:" width="150px"/>
+                    <Input id="_IDGenInput" value="{chatModel>/config/botName}" width="250px"/>
+                </l:HorizontalLayout>
+                
+                <l:HorizontalLayout id="_IDGenHorizontalLayout1" class="sapUiSmallMarginTop">
+                    <Label id="_IDGenLabel3" text="API Endpoint:" width="150px"/>
+                    <Input id="_IDGenInput1" value="{chatModel>/config/apiEndpoint}" width="250px"/>
+                </l:HorizontalLayout>
+                
+                <l:HorizontalLayout id="_IDGenHorizontalLayout2" class="sapUiSmallMarginTop">
+                    <Label id="_IDGenLabel4" text="API Key:" width="150px"/>
+                    <Input id="_IDGenInput2" value="{chatModel>/config/apiKey}" type="Password" width="250px"/>
+                </l:HorizontalLayout>
+                
+                <Label id="_IDGenLabel5" text="Display Settings" design="Bold" class="sapUiMediumMarginTop"/>
+                
+                <CheckBox id="_IDGenCheckBox" text="Enable Typing Indicator" selected="{chatModel>/config/enableTypingIndicator}"/>
+                <CheckBox id="_IDGenCheckBox1" text="Enable Quick Replies" selected="{chatModel>/config/enableQuickReplies}"/>
+                <CheckBox id="_IDGenCheckBox2" text="Enable Sound Notifications" selected="{settings>/sound}"/>
+                <CheckBox id="_IDGenCheckBox3" text="Enable Auto Response" selected="{settings>/autoResponse}"/>
+                
+                <l:HorizontalLayout id="_IDGenHorizontalLayout3" class="sapUiSmallMarginTop">
+                    <Label id="_IDGenLabel6" text="Language:" width="150px"/>
+                    <Select id="_IDGenSelect" selectedKey="{settings>/language}" width="150px">
+                        <items>
+                            <core:Item id="_IDGenItem" key="en" text="English"/>
+                            <core:Item id="_IDGenItem1" key="de" text="German"/>
+                            <core:Item id="_IDGenItem2" key="fr" text="French"/>
+                            <core:Item id="_IDGenItem3" key="es" text="Spanish"/>
+                        </items>
+                    </Select>
+                </l:HorizontalLayout>
+                
+            </l:VerticalLayout>
+        </content>
+        
+        <beginButton>
+            <Button id="_IDGenButton7" text="Save" type="Emphasized" press="onSaveSettings"/>
+        </beginButton>
+        
+        <endButton>
+            <Button id="_IDGenButton8" text="Cancel" press="onCancelSettings"/>
+        </endButton>
+        
+    </Dialog>
+</core:FragmentDefinition>

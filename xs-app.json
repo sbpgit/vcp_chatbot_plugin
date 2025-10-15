@@ -1,0 +1,58 @@
+{
+  "welcomeFile": "/index.html",
+  "authenticationMethod": "route",
+  "routes": [
+    {
+      "source": "^/v2/(.*)$",
+      "target": "/v2/$1",
+      "destination": "ConfigProdAuth",
+      "authenticationType": "xsuaa",
+       "csrfProtection": false,
+       "scope": {
+        "GET": [
+          "$XSAPPNAME.User"
+        ],
+        "PUT": [
+          "$XSAPPNAME.User"
+        ],
+        "PATCH": [
+          "$XSAPPNAME.User"
+        ],
+        "POST": [
+          "$XSAPPNAME.User"
+        ],
+        "DELETE": [
+          "$XSAPPNAME.User"
+        ],
+        "default": [
+          "$XSAPPNAME.User"
+        ]
+      }
+    },
+     {
+            "source": "^/api/(.*)$",
+            "target": "/api/$1",
+            "destination": "chatbot-api",
+            "authenticationType": "xsuaa"
+        },
+    {
+      "source": "^/resources/(.*)$",
+      "target": "/resources/$1",
+      "authenticationType": "none",
+      "destination": "ui5",
+      "cacheControl": "public, max-age=31536000"
+    },
+    {
+      "source": "^/test-resources/(.*)$",
+      "target": "/test-resources/$1",
+      "authenticationType": "none",
+      "destination": "ui5"
+    },
+    {
+      "source": "^(.*)$",
+      "target": "$1",
+      "service": "html5-apps-repo-rt",
+      "authenticationType": "xsuaa"
+    }
+  ]
+}

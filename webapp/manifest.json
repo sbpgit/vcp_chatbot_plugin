@@ -1,0 +1,136 @@
+{
+      "_version": "1.76.0",
+      "sap.app": {
+            "id": "chat.newchatbot",
+            "type": "component",
+            "i18n": "i18n/i18n.properties",
+            "applicationVersion": {
+                  "version": "0.0.1"
+            },
+            "title": "{{appTitle}}",
+            "description": "{{appDescription}}",
+            "resources": "resources.json",
+            "sourceTemplate": {
+                  "id": "@sap/generator-fiori:basic",
+                  "version": "1.18.7",
+                  "toolsId": "9f28b82d-8d7a-4a0b-be5b-4e7a67062bce"
+            },
+            "dataSources": {
+                  "mainService": {
+                        "uri": "/v2/catalog/",
+                        "type": "OData",
+                        "settings": {
+                              "annotations": [],
+                              "localUri": "localService/mainService/metadata.xml",
+                              "odataVersion": "2.0"
+                        }
+                  }
+            },
+            "crossNavigation": {
+                  "inbounds": {
+                        "Shell-plugin": {
+                              "semanticObject": "Shell",
+                              "action": "plugin",
+                              "signature": {
+                                    "parameters": {},
+                                    "additionalParameters": "allowed"
+                              },
+                              "hideLauncher": true
+                        }
+                  }
+            }
+      },
+      "sap.ui": {
+            "technology": "UI5",
+            "icons": {
+                  "icon": "",
+                  "favIcon": "",
+                  "phone": "",
+                  "phone@2": "",
+                  "tablet": "",
+                  "tablet@2": ""
+            },
+            "deviceTypes": {
+                  "desktop": true,
+                  "tablet": true,
+                  "phone": true
+            }
+      },
+      "sap.ui5": {
+            "flexEnabled": true,
+            "dependencies": {
+                  "minUI5Version": "1.140.0",
+                  "libs": {
+                        "sap.m": {},
+                        "sap.ui.core": {},
+                        "sap.ushell": {}
+                  }
+            },
+            "contentDensities": {
+                  "compact": true,
+                  "cozy": true
+            },
+            "models": {
+                  "i18n": {
+                        "type": "sap.ui.model.resource.ResourceModel",
+                        "settings": {
+                              "bundleName": "chat.newchatbot.i18n.i18n"
+                        }
+                  },
+                  "": {
+                        "dataSource": "mainService",
+                        "preload": true,
+                        "settings": {}
+                  }
+            },
+            "resources": {
+                  "css": [
+                        {
+                              "uri": "css/style.css"
+                        }
+                  ]
+            },
+            "routing": {
+                  "config": {
+                        "routerClass": "sap.m.routing.Router",
+                        "controlAggregation": "pages",
+                        "controlId": "app",
+                        "transition": "slide",
+                        "type": "View",
+                        "viewType": "XML",
+                        "path": "chat.newchatbot.view",
+                        "async": true,
+                        "viewPath": "chat.newchatbot.view"
+                  },
+                  "routes": [
+                        {
+                              "name": "RouteHome",
+                              "pattern": ":?query:",
+                              "target": [
+                                    "TargetHome"
+                              ]
+                        }
+                  ],
+                  "targets": {
+                        "TargetHome": {
+                              "id": "Home",
+                              "name": "Home"
+                        }
+                  }
+            },
+            "rootView": {
+                  "viewName": "chat.newchatbot.view.App",
+                  "type": "XML",
+                  "id": "App",
+                  "async": true
+            }
+      },
+      "sap.cloud": {
+            "public": true,
+            "service": "chatnewchatbot"
+      },
+      "sap.flp": {
+            "type": "plugin",
+            "config": {}
+      }
+}
