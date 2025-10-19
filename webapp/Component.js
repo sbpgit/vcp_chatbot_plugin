@@ -16,8 +16,30 @@ sap.ui.define([
             this._createFloatingButton();
             this._createChatPanel();
             this._addStyles();
+            this._setupNavigationListener();
         },
+_setupNavigationListener: function () {
+            const handleNav = () => {
+                const hash = window.location.hash;
+                const oChatBtnDiv = document.getElementById("chat-floating-btn");
+                const oChatPanel = document.getElementById("chatbot-panel");
 
+                // Show only when in FLP Home (Spaces & Pages)
+                if (hash.startsWith("#Shell-home") || hash.startsWith("#Launchpad-open") || hash === "" || hash === "#") {
+                    if (oChatBtnDiv) oChatBtnDiv.style.display = "flex";
+                    if (oChatPanel) oChatPanel.style.display = "flex";
+                    console.log("Chatbot: Visible in FLP home.");
+                } else {
+                    if (oChatBtnDiv) oChatBtnDiv.style.display = "none";
+                    if (oChatPanel) oChatPanel.style.display = "none";
+                    console.log("Chatbot: Hidden in app navigation.");
+                }
+            };
+
+            window.addEventListener("hashchange", handleNav);
+            setTimeout(handleNav, 500); // initial check
+            this._navigationHandler = handleNav;
+        },
         _createFloatingButton: function () {
             var oDiv = document.createElement("div");
             oDiv.id = "chat-floating-btn";
