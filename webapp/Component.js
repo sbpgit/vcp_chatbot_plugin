@@ -6,8 +6,8 @@ sap.ui.define([
     "sap/m/Text",
     "sap/m/HBox",
     "sap/m/Image",
-    "sap/m/MessageToast"
-], function (UIComponent, Button, Input, VBox, Text, HBox, Image, MessageToast) {
+    "sap/ui/core/Icon"
+], function (UIComponent, Button, Input, VBox, Text, HBox, Image, Icon) {
     "use strict";
 
     return UIComponent.extend("chat.newchatbot.Component", {
@@ -18,43 +18,42 @@ sap.ui.define([
             this._addStyles();
             this._setupNavigationListener();
         },
-_setupNavigationListener: function () {
+
+        _setupNavigationListener: function () {
             const handleNav = () => {
                 const hash = window.location.hash;
                 const oChatBtnDiv = document.getElementById("chat-floating-btn");
                 const oChatPanel = document.getElementById("chatbot-panel");
 
-                // Show only when in FLP Home (Spaces & Pages)
-                if (hash.startsWith("#Shell-home") || hash.startsWith("#Launchpad-open") || hash === "" || hash === "#") {
+                if (hash.startsWith("#Shell-home") || hash === "" || hash === "#") {
                     if (oChatBtnDiv) oChatBtnDiv.style.display = "flex";
                     if (oChatPanel) oChatPanel.style.display = "flex";
-                    console.log("Chatbot: Visible in FLP home.");
                 } else {
                     if (oChatBtnDiv) oChatBtnDiv.style.display = "none";
                     if (oChatPanel) oChatPanel.style.display = "none";
-                    console.log("Chatbot: Hidden in app navigation.");
                 }
             };
-
             window.addEventListener("hashchange", handleNav);
-            setTimeout(handleNav, 500); // initial check
-            this._navigationHandler = handleNav;
+            setTimeout(handleNav, 500);
         },
+
         _createFloatingButton: function () {
-            var oDiv = document.createElement("div");
+            const oDiv = document.createElement("div");
             oDiv.id = "chat-floating-btn";
-            oDiv.style.position = "fixed";
-            oDiv.style.bottom = "20px";
-            oDiv.style.right = "20px";
-            oDiv.style.zIndex = "1000";
+            Object.assign(oDiv.style, {
+                position: "fixed",
+                bottom: "20px",
+                right: "20px",
+                zIndex: "1000"
+            });
             document.body.appendChild(oDiv);
 
-            var oChatButton = new Button({
+            const oChatButton = new Button({
                 icon: "sap-icon://discussion",
                 type: "Emphasized",
                 tooltip: "Open Chat",
                 press: function () {
-                    var oPanel = document.getElementById("chatbot-panel");
+                    const oPanel = document.getElementById("chatbot-panel");
                     if (oPanel.classList.contains("open")) {
                         oPanel.classList.remove("open");
                         oPanel.classList.add("closed");
@@ -69,74 +68,122 @@ _setupNavigationListener: function () {
         },
 
         _createChatPanel: function () {
-            var oPanel = document.createElement("div");
-            oPanel.id = "chatbot-panel";
-            oPanel.className = "closed";
-            oPanel.style.width = "350px";
-            oPanel.style.height = "500px";
-            oPanel.style.position = "fixed";
-            oPanel.style.bottom = "70px";
-            oPanel.style.right = "20px";
-            oPanel.style.background = "white";
-            oPanel.style.border = "1px solid #ddd";
-            oPanel.style.borderRadius = "12px";
-            oPanel.style.boxShadow = "0 4px 10px rgba(0,0,0,0.2)";
-            oPanel.style.display = "flex";
-            oPanel.style.flexDirection = "column";
-            oPanel.style.overflow = "hidden";
-            oPanel.style.zIndex = "1000";
+            const panel = document.createElement("div");
+            panel.id = "chatbot-panel";
+            panel.className = "closed";
+            Object.assign(panel.style, {
+                width: "350px",
+                height: "500px",
+                position: "fixed",
+                bottom: "70px",
+                right: "20px",
+                background: "white",
+                border: "1px solid #ddd",
+                borderRadius: "12px",
+                boxShadow: "0 4px 10px rgba(0,0,0,0.2)",
+                display: "flex",
+                flexDirection: "column",
+                overflow: "hidden",
+                zIndex: "1000"
+            });
+            document.body.appendChild(panel);
 
             // --- Header ---
-            var oHeader = document.createElement("div");
-            oHeader.style.background = "#0a6ed1";
-            oHeader.style.color = "white";
-            oHeader.style.padding = "10px";
-            oHeader.style.fontWeight = "bold";
-            oHeader.style.display = "flex";
-            oHeader.style.justifyContent = "space-between";
-            oHeader.style.alignItems = "center";
-
-            oHeader.innerHTML = `<span>💬 Chat Assistant</span>`;
-            var oCloseBtn = document.createElement("span");
-            oCloseBtn.innerHTML = "✖";
-            oCloseBtn.style.cursor = "pointer";
-            oCloseBtn.onclick = function () {
-                oPanel.classList.remove("open");
-                oPanel.classList.add("closed");
+            const header = document.createElement("div");
+            Object.assign(header.style, {
+                background: "#0a6ed1",
+                color: "white",
+                padding: "10px",
+                fontWeight: "bold",
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                height: "42px",
+                flexShrink: "0"
+            });
+            header.innerHTML = `<span>💬 Chat Assistant</span>`;
+            const close = document.createElement("span");
+            close.innerHTML = "✖";
+            close.style.cursor = "pointer";
+            close.onclick = function () {
+                panel.classList.remove("open");
+                panel.classList.add("closed");
             };
-            oHeader.appendChild(oCloseBtn);
-            oPanel.appendChild(oHeader);
+            header.appendChild(close);
+            panel.appendChild(header);
 
-            // --- Messages container ---
-            var oVBox = new VBox("chatMessages", {
-                fitContainer: true,
+            // --- Body ---
+            const body = document.createElement("div");
+            Object.assign(body.style, {
+                flex: "1",
+                display: "flex",
+                flexDirection: "column",
+                overflow: "hidden",
+                position: "relative"
+            });
+            panel.appendChild(body);
+
+            // --- Scroll area ---
+            const scrollWrapper = document.createElement("div");
+            Object.assign(scrollWrapper.style, {
+                flex: "1",
+                overflowY: "auto",
+                padding: "10px",
+                background: "#fff",
+                marginBottom: "65px"
+            });
+            scrollWrapper.id = "chat-scroll-wrapper";
+            body.appendChild(scrollWrapper);
+
+            const oVBox = new VBox("chatMessages", {
+                width: "100%",
                 items: [
                     new Text({ text: "👋 Hello! I’m your assistant." }).addStyleClass("chatBotBubble")
-                ],
-                layoutData: new sap.m.FlexItemData({ growFactor: 1 })
-            }).addStyleClass("chatMessageArea");
-            oVBox.placeAt(oPanel);
+                ]
+            });
+            oVBox.placeAt(scrollWrapper);
 
-            // --- Input + Send button ---
-            var oInputBox = new HBox({
+            // --- Sticky input bar ---
+            const stickyInputBar = document.createElement("div");
+            stickyInputBar.id = "stickyInputBar";
+            Object.assign(stickyInputBar.style, {
+                position: "absolute",
+                bottom: "0",
+                left: "0",
+                width: "100%",
+                background: "#fff",
+                borderTop: "1px solid #ccc",
+                padding: "8px 10px",
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+                boxShadow: "0 -2px 5px rgba(0,0,0,0.05)",
+                zIndex: "10"
+            });
+            body.appendChild(stickyInputBar);
+
+            const oInputBar = new HBox({
                 width: "100%",
                 alignItems: "Center",
+                justifyContent: "Start",
                 items: [
                     new Input("chatInput", {
                         placeholder: "Type a message...",
-                        layoutData: new sap.m.FlexItemData({ growFactor: 1 }),
                         submit: function (oEvent) {
-                            var sMsg = oEvent.getParameter("value");
+                            const sMsg = oEvent.getParameter("value");
                             this.setValue("");
                             sendMessage(sMsg);
                         }
-                    }),
+                    })
+                    .addStyleClass("chatInputField")
+                    .setLayoutData(new sap.m.FlexItemData({ growFactor: 1 })),
+
                     new Button({
                         icon: "sap-icon://paper-plane",
                         type: "Emphasized",
                         press: function () {
-                            var oInput = sap.ui.getCore().byId("chatInput");
-                            var sMsg = oInput.getValue();
+                            const oInput = sap.ui.getCore().byId("chatInput");
+                            const sMsg = oInput.getValue();
                             if (sMsg) {
                                 oInput.setValue("");
                                 sendMessage(sMsg);
@@ -144,33 +191,61 @@ _setupNavigationListener: function () {
                         }
                     }).addStyleClass("chatSendBtn")
                 ]
-            }).addStyleClass("chatInputBar");
-            oInputBox.placeAt(oPanel);
+            });
+            oInputBar.placeAt(stickyInputBar);
 
-            // Append panel to body
-            document.body.appendChild(oPanel);
+            sap.ui.getCore().applyChanges();
 
-            // --- Helper: Send Message ---
+            // --- Scroll-to-bottom floating button (SAP icon) ---
+            const scrollButton = document.createElement("div");
+            scrollButton.id = "scrollToBottomBtn";
+            Object.assign(scrollButton.style, {
+                position: "absolute",
+                bottom: "80px",
+                right: "15px",
+                background: "#0a6ed1",
+                color: "white",
+                borderRadius: "50%",
+                width: "36px",
+                height: "36px",
+                cursor: "pointer",
+                display: "none",
+                zIndex: "20",
+                boxShadow: "0 2px 5px rgba(0,0,0,0.3)",
+                alignItems: "center",
+                justifyContent: "center",
+                transition: "opacity 0.3s ease",
+                padding: "4px"
+            });
+            body.appendChild(scrollButton);
+
+            const oIcon = new Icon({
+                src: "sap-icon://slim-arrow-down",
+                size: "1.2rem",
+                color: "white",
+                press: function () {
+                    scrollDown(true);
+                }
+            });
+            oIcon.placeAt(scrollButton);
+
+            // --- Message Logic ---
             function sendMessage(sMsg) {
                 if (!sMsg) return;
-                var oVBox = sap.ui.getCore().byId("chatMessages");
+                const oVBox = sap.ui.getCore().byId("chatMessages");
                 oVBox.addItem(new Text({ text: sMsg }).addStyleClass("chatUserBubble"));
+                sap.ui.getCore().applyChanges();
+                scrollDown();
 
-                // --- Add typing indicator ---
-                var oTyping = new HBox("typingIndicator", {
+                const oTyping = new HBox("typingIndicator", {
                     items: [
-                        new Image({
-                            src: "image/chaticon.jpg",
-                            width: "28px",
-                            height: "28px"
-                        }).addStyleClass("chatAvatar"),
-                        new Text({ text: "🤖 Bot is typing..." }).addStyleClass("chatTypingBubble")
+                        new Image({ src: "image/chaticon.jpg", width: "28px", height: "28px" }),
+                        new Text({ text: "🤖 Bot is typing..." })
                     ]
-                }).addStyleClass("chatMessage bot");
+                });
                 oVBox.addItem(oTyping);
-                scrollDown(oVBox);
+                scrollDown();
 
-                // --- Call backend ---
                 setTimeout(function () {
                     $.ajax({
                         url: "https://salesapi.cfapps.us10-001.hana.ondemand.com/chat",
@@ -178,85 +253,80 @@ _setupNavigationListener: function () {
                         contentType: "application/json",
                         data: JSON.stringify({ "query": sMsg }),
                         success: function (data) {
-                            removeTyping(oVBox);
-                            var oBotContent = new VBox().addStyleClass("chatBotBubble");
+                            removeTyping();
+                            const oBotVBox = new VBox().addStyleClass("chatBotBubble");
+                            if (data.summary) oBotVBox.addItem(new Text({ text: "🤖 " + data.summary }));
+                            if (data.table) oBotVBox.addItem(new sap.ui.core.HTML({ content: data.table }));
 
-                            if (data.summary) {
-                                oBotContent.addItem(
-                                    new Text({ text: "🤖 " + data.summary })
-                                );
-                            }
-
-                            if (data.table) {
-                                oBotContent.addItem(
-                                    new sap.ui.core.HTML({
-                                        content: data.table
-                                    })
-                                );
-                            }
-
-                            // HBox for avatar + bot content
-                            var oBotMessage = new HBox({
+                            const oBotMsg = new HBox({
                                 items: [
                                     new Image({
                                         src: "https://sap.github.io/ui5-webcomponents/assets/images/avatars/avatar_1.png",
                                         width: "28px",
                                         height: "28px"
-                                    }).addStyleClass("chatAvatar"),
-                                    oBotContent
+                                    }),
+                                    oBotVBox
                                 ]
-                            }).addStyleClass("chatMessage bot");
-
-                            oVBox.addItem(oBotMessage);
-                            scrollDown(oVBox);
+                            });
+                            oVBox.addItem(oBotMsg);
+                            sap.ui.getCore().applyChanges();
+                            scrollDown();
                         },
                         error: function (xhr) {
-                            removeTyping(oVBox);
+                            removeTyping();
                             oVBox.addItem(new HBox({
                                 items: [
                                     new Image({
                                         src: "https://sap.github.io/ui5-webcomponents/assets/images/avatars/avatar_1.png",
                                         width: "28px",
                                         height: "28px"
-                                    }).addStyleClass("chatAvatar"),
+                                    }),
                                     new Text({ text: "🤖 " + xhr.statusText }).addStyleClass("chatBotBubble")
                                 ]
-                            }).addStyleClass("chatMessage bot"));
-                            scrollDown(oVBox);
+                            }));
+                            sap.ui.getCore().applyChanges();
+                            scrollDown();
                         }
                     });
                 }, 800);
             }
 
-            // Remove typing indicator
-            function removeTyping(oVBox) {
-                var oTyping = sap.ui.getCore().byId("typingIndicator");
+            function removeTyping() {
+                const oVBox = sap.ui.getCore().byId("chatMessages");
+                const oTyping = sap.ui.getCore().byId("typingIndicator");
                 if (oTyping) {
                     oVBox.removeItem(oTyping);
                     oTyping.destroy();
                 }
             }
 
-            // Auto-scroll helper
-            function scrollDown(oVBox) {
-                setTimeout(function () {
-                    var oMsgArea = oVBox.getDomRef();
-                    if (oMsgArea) {
-                        oMsgArea.scrollTop = oMsgArea.scrollHeight;
-                    }
-                }, 200);
+            function scrollDown(force) {
+                const scrollDiv = document.getElementById("chat-scroll-wrapper");
+                if (scrollDiv) {
+                    setTimeout(() => {
+                        if (force) {
+                            scrollDiv.scrollTo({ top: scrollDiv.scrollHeight, behavior: "smooth" });
+                        } else {
+                            scrollDiv.scrollTop = scrollDiv.scrollHeight;
+                        }
+                    }, 150);
+                }
             }
+
+            // --- Show/hide scroll-to-bottom button dynamically ---
+            const scrollDiv = document.getElementById("chat-scroll-wrapper");
+            scrollDiv.addEventListener("scroll", () => {
+                const scrollButton = document.getElementById("scrollToBottomBtn");
+                if (!scrollButton) return;
+                const nearBottom = scrollDiv.scrollHeight - scrollDiv.scrollTop - scrollDiv.clientHeight < 150;
+                scrollButton.style.opacity = nearBottom ? "0" : "1";
+                scrollButton.style.display = nearBottom ? "none" : "flex";
+            });
         },
 
         _addStyles: function () {
-            var style = document.createElement("style");
+            const style = document.createElement("style");
             style.innerHTML = `
-                #chatbot-panel {
-                    opacity: 0;
-                    transform: translateY(20px);
-                    transition: all 0.3s ease-in-out;
-                    pointer-events: none;
-                }
                 #chatbot-panel.open {
                     opacity: 1;
                     transform: translateY(0);
@@ -287,27 +357,75 @@ _setupNavigationListener: function () {
                     align-self: flex-start;
                     word-wrap: break-word;
                 }
-                    .chatMessage {
+.chatInputBar {
     display: flex;
-    align-items: flex-end;
-    gap: 6px;
-    margin: 6px;
+    align-items: center;
+    width: 100%;
+    padding: 0;
+    margin: 0;
+    border: 1.6px solid #0a6ed1 !important;
+    border-radius: 10px !important;
+    overflow: hidden;
+    box-sizing: border-box;
+    background: #fff !important;
 }
 
-.chatMessage.user {
-    justify-content: flex-end;
+/* --- Chat Input Field --- */
+.chatInputField .sapMInputBaseInner {
+    height: 2rem !important;
+    border: none !important; /* remove default border */
+    border-radius: 0 !important;
+    padding: 0 12px !important;
+    font-size: 0.95rem !important;
+    line-height: 2.8rem !important;
+    color: #000;
+    background: transparent !important;
+    box-shadow: none !important;
 }
 
-.chatMessage.bot {
-    justify-content: flex-start;
+/* Placeholder always centered and visible */
+.chatInputField .sapMInputBaseInner::placeholder {
+    color: #888 !important;
+    opacity: 1 !important;
 }
 
-.chatAvatar {
-    width: 28px;
-    height: 28px;
-    border-radius: 50%;
-    object-fit: cover;
+   .chatSendBtn {
+    height: 2.6rem !important;
+    width: 2.6rem !important;
+    border-radius: 10px !important;
+    display: flex
+;
+    align-items: center;
+    justify-content: center;
+    color: white !important;
+    box-shadow: none !important;
+    border: none !important;
+    margin-left: 0px;
+    margin-right: 4px;
+    transition: background 0.2s 
+ease, transform 0.1s 
+ease;
 }
+
+.chatSendBtn:hover {
+    background: #085caf !important;
+    transform: scale(1.05);
+}
+
+/* Keep blue border active even when input is focused */
+.chatInputField .sapMInputBaseInner:focus {
+    outline: none !important;
+    box-shadow: none !important;
+}
+
+                .scrollToBottomBtn:hover {
+                    background: #085caf;
+                    transform: scale(1.08);
+                }
+                .scrollToBottomBtn {
+                    opacity: 0;
+                    transition: opacity 0.3s ease;
+                }
             `;
             document.head.appendChild(style);
         }
