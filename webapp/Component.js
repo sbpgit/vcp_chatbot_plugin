@@ -25,7 +25,7 @@ sap.ui.define([
                 const oChatBtnDiv = document.getElementById("chat-floating-btn");
                 const oChatPanel = document.getElementById("chatbot-panel");
 
-                if (hash.startsWith("#Shell-home") || hash === "" || hash === "#") {
+                if (hash.startsWith("#Shell-home") || hash.startsWith("#Launchpad-open") || hash === "" || hash === "#") {
                     if (oChatBtnDiv) oChatBtnDiv.style.display = "flex";
                     if (oChatPanel) oChatPanel.style.display = "flex";
                 } else {
