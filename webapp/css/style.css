@@ -1,4 +1,6 @@
-/* Enter your custom styles here */
+/* ===========================================================
+   🌐  GENERAL CHATBOT STYLES
+   =========================================================== */
 .chatbotFloatingButton {
     position: fixed !important;
     bottom: 30px !important;
@@ -7,69 +9,80 @@
     width: 60px !important;
     height: 60px !important;
     border-radius: 50% !important;
+    background-color: var(--sapButton_Emphasized_Background, #0a6ed1) !important;
+    color: var(--sapButton_Emphasized_TextColor, #fff) !important;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
     animation: pulse 2s infinite;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.chatbotFloatingButton:hover {
+    transform: scale(1.05);
+    box-shadow: 0 6px 18px rgba(10, 110, 209, 0.35);
 }
 
 @keyframes pulse {
-    0% {
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    }
-    50% {
-        box-shadow: 0 4px 20px rgba(10, 110, 209, 0.4);
-    }
-    100% {
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    }
+    0%, 100% { box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); }
+    50% { box-shadow: 0 4px 20px rgba(10, 110, 209, 0.4); }
 }
 
-.chatbot-position-bottom-left {
-    bottom: 30px !important;
-    left: 30px !important;
-    right: auto !important;
-}
+/* Alternate floating positions */
+.chatbot-position-bottom-left { bottom: 30px !important; left: 30px !important; right: auto !important; }
+.chatbot-position-top-right { top: 30px !important; bottom: auto !important; right: 30px !important; }
+.chatbot-position-top-left { top: 30px !important; bottom: auto !important; left: 30px !important; right: auto !important; }
 
-.chatbot-position-top-right {
-    top: 30px !important;
-    bottom: auto !important;
-    right: 30px !important;
-}
-
-.chatbot-position-top-left {
-    top: 30px !important;
-    bottom: auto !important;
-    left: 30px !important;
-    right: auto !important;
-}
-
+/* ===========================================================
+   🧭  CHAT PANEL
+   =========================================================== */
 .chatPopover {
     border-radius: 12px !important;
-     width: 800px !important;  /* default is usually ~320px */
-    max-width: 95vw !important; /* optional: for responsiveness */
+    width: 800px !important;
+    max-width: 95vw !important;
 }
 
+#chatbot-panel {
+    width: 420px !important;
+    height: 550px !important;
+    border-radius: 12px !important;
+    background-color: var(--sapBackgroundColor, #fff) !important;
+    color: var(--sapTextColor, #000) !important;
+}
+
+/* Responsive adjustments */
+@media (max-width: 600px) {
+    #chatbot-panel {
+        width: 90vw !important;
+        right: 5vw !important;
+        bottom: 10px !important;
+    }
+}
+
+/* ===========================================================
+   🧩  CHAT HEADER
+   =========================================================== */
 .chatHeader {
     background: linear-gradient(135deg, #0a6ed1 0%, #0854a0 100%) !important;
-    color: white !important;
+    color: var(--sapShell_TextColor, #fff) !important;
 }
 
 .chatBotName {
-    color: white !important;
-    font-weight: bold !important;
+    font-weight: 600 !important;
     font-size: 1.1rem !important;
 }
 
 .chatStatus {
-    color: rgba(255, 255, 255, 0.9) !important;
+    color: rgba(255, 255, 255, 0.85) !important;
     font-size: 0.875rem !important;
 }
 
-.chatMessagesArea {
-    background-color: #f5f7fa !important;
-}
+.chatStatusOnline { color: #4caf50 !important; }
 
-.messageItem {
-    padding: 8px 0 !important;
+/* ===========================================================
+   💬  MESSAGE BUBBLES
+   =========================================================== */
+.chatMessagesArea {
+    background-color: var(--sapList_Background, #f5f7fa) !important;
 }
 
 .userMessageBox {
@@ -82,65 +95,45 @@
 }
 
 .botMessageBox {
-    background: white !important;
+    background: var(--sapTile_Background, #fff) !important;
     padding: 10px 15px !important;
     border-radius: 18px !important;
     border-bottom-left-radius: 4px !important;
-    border: 1px solid #e0e0e0 !important;
+    border: 1px solid var(--sapList_BorderColor, #e0e0e0) !important;
     max-width: 70% !important;
     margin: 5px 0 !important;
 }
 
 .userMessageText {
-    color: white !important;
+    color: #fff !important;
     word-wrap: break-word !important;
 }
 
 .botMessageText {
-    color: #333 !important;
+    color: var(--sapTextColor, #333) !important;
     word-wrap: break-word !important;
 }
 
 .messageTimestamp {
     font-size: 0.75rem !important;
-    color: #999 !important;
+    color: var(--sapContent_LabelColor, #999) !important;
     margin-top: 4px !important;
 }
 
 .typingIndicatorBox {
-    background: white !important;
+    background: var(--sapTile_Background, #fff) !important;
     padding: 10px 15px !important;
     border-radius: 18px !important;
-    border: 1px solid #e0e0e0 !important;
+    border: 1px solid var(--sapList_BorderColor, #e0e0e0) !important;
 }
 
 .typingText {
-    color: #999 !important;
+    color: var(--sapContent_LabelColor, #999) !important;
     font-style: italic !important;
 }
 
-.quickRepliesArea {
-    padding: 10px !important;
-    border-top: 1px solid #e0e0e0 !important;
-    background: white !important;
-}
-
-.chatInputArea {
-    border-top: 1px solid #e0e0e0 !important;
-    background: white !important;
-}
-
-.chatInputField input {
-    border-radius: 20px !important;
-    padding: 8px 15px !important;
-}
-
-.chatStatusOnline {
-    color: #4caf50 !important;
-}
-
 .chatBotBubble {
-    background-color: #f0f0f0;
+    background-color: var(--sapTile_Background, #f0f0f0);
     border-radius: 10px;
     padding: 8px 12px;
     margin-left: 8px;
@@ -152,6 +145,8 @@
     border-collapse: collapse;
     width: 100%;
     margin-top: 6px;
+    border-radius: 6px;
+    overflow: hidden;
 }
 
 .chatBotBubble th, .chatBotBubble td {
@@ -161,46 +156,96 @@
     font-size: 0.875rem;
 }
 
-#chatbot-panel {
-    width: 420px !important;
-    height: 550px !important;
+/* ===========================================================
+   🧠  INPUT AREA
+   =========================================================== */
+.chatInputArea {
+    border-top: 1px solid var(--sapList_BorderColor, #e0e0e0) !important;
+    background: var(--sapBackgroundColor, #fff) !important;
 }
 
-/* On smaller screens */
-@media (max-width: 600px) {
-    #chatbot-panel {
-        width: 90vw !important;  /* 90% of viewport width */
-        right: 5vw !important;
-        bottom: 10px !important;
-    }
+.chatInputBar {
+    display: flex;
+    align-items: flex-end;
+    width: 100%;
+    border-radius: 10px !important;
+    background: #fff !important;
+    box-sizing: border-box;
+    padding: 6px 8px;
 }
 
-.chatInputField .sapMInputBaseInner {
-    height: 0rem !important;
-    border: none !important;
-    border-radius: 0 !important;
-    padding: 0 12px !important;
+/* ===========================================================
+   📝  TEXT INPUT STYLING
+   =========================================================== */
+.chatInputField .sapMTextAreaInner {
+    border: 1.6px solid var(--sapActiveColor, #0a6ed1) !important;
+    border-radius: 10px !important;
+    background: var(--sapField_Background, #fff) !important;
+    color: var(--sapTextColor, #000) !important;
     font-size: 0.95rem !important;
-    line-height: 2.8rem !important;
-    color: #000;
-    background: transparent !important;
+    padding: 8px 12px !important;
+    resize: none !important;
+    min-height: 2.2rem !important;
+    max-height: 8.5rem !important; /* ≈ 6 lines */
+    overflow-y: auto !important;
+    line-height: 1.4rem !important;
     box-shadow: none !important;
+    transition: height 0.15s ease-out, border-color 0.2s ease;
 }
 
+.chatInputField .sapMTextAreaInner:focus {
+    border-color: var(--sapHighlightColor, #085caf) !important;
+    outline: none !important;
+}
+
+/* Custom Scrollbar */
+.chatInputField .sapMTextAreaInner::-webkit-scrollbar {
+    width: 6px;
+}
+.chatInputField .sapMTextAreaInner::-webkit-scrollbar-thumb {
+    background-color: rgba(10, 110, 209, 0.3);
+    border-radius: 3px;
+}
+.chatInputField .sapMTextAreaInner::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(10, 110, 209, 0.6);
+}
+
+.sapMInputBase.sapMTextArea {
+    height: 4rem !important;
+    min-height: 2.5rem;
+    min-width: 23rem !important;
+}
+
+/* ===========================================================
+   📤  SEND BUTTON
+   =========================================================== */
 .chatSendBtn {
     height: 2.6rem !important;
     width: 2.6rem !important;
     border-radius: 10px !important;
-    display: flex
-;
+    display: flex;
     align-items: center;
     justify-content: center;
-    color: white !important;
-    box-shadow: none !important;
+    color: var(--sapButton_Emphasized_TextColor, #fff) !important;
+    background-color: var(--sapButton_Emphasized_Background, #0a6ed1) !important;
     border: none !important;
-    margin-left: 0px;
-    margin-right: 8px !important;
-    transition: background 0.2s 
-ease, transform 0.1s 
-ease;
+    box-shadow: none !important;
+    margin-left: 0px !important;
+    transition: background 0.2s ease, transform 0.1s ease;
+    margin-right: 3.5rem !important;
+    margin-bottom: 1.1rem !important;
+}
+
+.chatSendBtn:hover {
+    background: var(--sapButton_Emphasized_Hover_Background, #085caf) !important;
+    transform: scale(1.05);
+}
+
+/* ===========================================================
+   ⚙️  QUICK REPLIES AREA
+   =========================================================== */
+.quickRepliesArea {
+    padding: 10px !important;
+    border-top: 1px solid var(--sapList_BorderColor, #e0e0e0) !important;
+    background: var(--sapBackgroundColor, #fff) !important;
 }
