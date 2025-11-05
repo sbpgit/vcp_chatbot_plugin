@@ -9,14 +9,36 @@ sap.ui.define([
     "sap/ui/core/Icon"
 ], function (UIComponent, Button, Input, VBox, Text, HBox, Image, Icon) {
     "use strict";
-
+    var that;
     return UIComponent.extend("chat.newchatbot.Component", {
         init: function () {
+            sap.ui.core.BusyIndicator.show(0);
+            that = this;
+            // that.oJobModel = that.getOwnerComponent().getModel("jobs");
+            that.token = "";
             UIComponent.prototype.init.apply(this, arguments);
             this._createFloatingButton();
             this._createChatPanel();
             this._addStyles();
             this._setupNavigationListener();
+            var oRootPath = jQuery.sap.getModulePath("chat.newchatbot");
+            var oImageModel = new sap.ui.model.json.JSONModel({ path: oRootPath });
+            this.setModel(oImageModel, "imageModel");
+            this.getUser();
+             setTimeout(function () {
+        sap.ui.core.BusyIndicator.hide();
+    }, 5000);
+        },
+         getUser: function () {
+            let vUser;
+            if (sap.ushell && sap.ushell.Container) {
+                let email = sap.ushell.Container.getService("UserInfo")
+                    .getUser()
+                    .getEmail();
+                vUser = email ? email : "";
+            }
+            return vUser;
+
         },
 
         _setupNavigationListener: function () {
@@ -101,7 +123,12 @@ sap.ui.define([
                 height: "42px",
                 flexShrink: "0"
             });
-            header.innerHTML = `<span>💬 Chat Assistant</span>`;
+             var sRootPath = jQuery.sap.getModulePath("chat/newchatbot", "/");
+             const logoPath = sRootPath + "image/logo.png";
+            header.innerHTML = ` <div style="display:flex; align-items:center; gap:8px;">
+        <img src="${logoPath}" width="32" height="32" style="border-radius:50%; background:white;"/>
+        <span>VC Planner Assistant</span>
+    </div>`;
             const close = document.createElement("span");
             close.innerHTML = "✖";
             close.style.cursor = "pointer";
@@ -138,7 +165,7 @@ sap.ui.define([
             const oVBox = new VBox("chatMessages", {
                 width: "100%",
                 items: [
-                    new Text({ text: "👋 Hello! I’m your assistant." }).addStyleClass("chatBotBubble")
+                    new Text({ text: "Hello! I’m your VC Planner Assistant.How can I help you today?" }).addStyleClass("chatBotBubble")
                 ]
             });
             oVBox.placeAt(scrollWrapper);
@@ -175,8 +202,8 @@ sap.ui.define([
                             sendMessage(sMsg);
                         }
                     })
-                    .addStyleClass("chatInputField")
-                    .setLayoutData(new sap.m.FlexItemData({ growFactor: 1 })),
+                        .addStyleClass("chatInputField")
+                        .setLayoutData(new sap.m.FlexItemData({ growFactor: 1 })),
 
                     new Button({
                         icon: "sap-icon://paper-plane",
@@ -232,6 +259,19 @@ sap.ui.define([
             // --- Message Logic ---
             function sendMessage(sMsg) {
                 if (!sMsg) return;
+                that.oJobModel = that.getModel("jobs");
+                that.oJobModel.callFunction("/getAuthorization", {
+                    method: "GET",
+                    success: function (oData) {
+                        sap.ui.core.BusyIndicator.hide();
+                        var bearerToken = oData.getAuthorization;
+                        that.token = bearerToken;
+
+                    },
+                    error: function (oData, error) {
+                        MessageToast.show("error");
+                    }
+                });
                 const oVBox = sap.ui.getCore().byId("chatMessages");
                 oVBox.addItem(new Text({ text: sMsg }).addStyleClass("chatUserBubble"));
                 sap.ui.getCore().applyChanges();
@@ -239,7 +279,7 @@ sap.ui.define([
 
                 const oTyping = new HBox("typingIndicator", {
                     items: [
-                        new Image({ src: "image/chaticon.jpg", width: "28px", height: "28px" }),
+                        new Image({ src: "image/logo.png", width: "28px", height: "28px" }),
                         new Text({ text: "🤖 Bot is typing..." })
                     ]
                 });
@@ -247,21 +287,32 @@ sap.ui.define([
                 scrollDown();
 
                 setTimeout(function () {
+                    var userId = that.getUser().toLowerCase();
+                    // var userId = "shariefahamed@sbpcorp.in";
                     $.ajax({
-                        url: "https://salesapi.cfapps.us10-001.hana.ondemand.com/chat",
+                        url: "https://vcp_assistant_api.cfapps.us10-001.hana.ondemand.com/ask",
                         method: "POST",
                         contentType: "application/json",
-                        data: JSON.stringify({ "query": sMsg }),
+                        data: JSON.stringify({ "query": sMsg, "userid" : userId}),
+                        headers: {
+                            "Authorization": that.token  // ✅ pass token here
+                        },
                         success: function (data) {
                             removeTyping();
                             const oBotVBox = new VBox().addStyleClass("chatBotBubble");
-                            if (data.summary) oBotVBox.addItem(new Text({ text: "🤖 " + data.summary }));
+                            if (data.response) {
+                                if (data.response.startsWith("An unexpected error")) {
+                                    oBotVBox.addItem(new Text({ text: "Sorry, I ran into an internal error. Please try again later." }));
+                                } else {
+                                    oBotVBox.addItem(new Text({ text: data.response }));
+                                }
+                            }
                             if (data.table) oBotVBox.addItem(new sap.ui.core.HTML({ content: data.table }));
 
                             const oBotMsg = new HBox({
                                 items: [
                                     new Image({
-                                        src: "https://sap.github.io/ui5-webcomponents/assets/images/avatars/avatar_1.png",
+                                        src: "image/logo.png",
                                         width: "28px",
                                         height: "28px"
                                     }),
@@ -277,7 +328,7 @@ sap.ui.define([
                             oVBox.addItem(new HBox({
                                 items: [
                                     new Image({
-                                        src: "https://sap.github.io/ui5-webcomponents/assets/images/avatars/avatar_1.png",
+                                        src: "image/logo.png",
                                         width: "28px",
                                         height: "28px"
                                     }),

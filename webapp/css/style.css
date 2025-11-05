@@ -174,3 +174,33 @@
         bottom: 10px !important;
     }
 }
+
+.chatInputField .sapMInputBaseInner {
+    height: 0rem !important;
+    border: none !important;
+    border-radius: 0 !important;
+    padding: 0 12px !important;
+    font-size: 0.95rem !important;
+    line-height: 2.8rem !important;
+    color: #000;
+    background: transparent !important;
+    box-shadow: none !important;
+}
+
+.chatSendBtn {
+    height: 2.6rem !important;
+    width: 2.6rem !important;
+    border-radius: 10px !important;
+    display: flex
+;
+    align-items: center;
+    justify-content: center;
+    color: white !important;
+    box-shadow: none !important;
+    border: none !important;
+    margin-left: 0px;
+    margin-right: 8px !important;
+    transition: background 0.2s 
+ease, transform 0.1s 
+ease;
+}

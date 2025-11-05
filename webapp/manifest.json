@@ -24,6 +24,14 @@
                               "localUri": "localService/mainService/metadata.xml",
                               "odataVersion": "2.0"
                         }
+                  },
+                  "jobs":{
+                        "uri": "/v2/job-scheduler/",
+                        "type": "OData",
+                        "settings": {
+                              "annotations": [],
+                              "odataVersion": "2.0"
+                        } 
                   }
             },
             "crossNavigation": {
@@ -79,6 +87,11 @@
                   },
                   "": {
                         "dataSource": "mainService",
+                        "preload": true,
+                        "settings": {}
+                  },
+                  "jobs": {
+                        "dataSource": "jobs",
                         "preload": true,
                         "settings": {}
                   }

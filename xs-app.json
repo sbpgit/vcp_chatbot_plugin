@@ -30,6 +30,33 @@
       }
     },
      {
+      "source": "^/v2/jobs/(.*)$",
+      "target": "/v2/jobs/$1",
+      "destination": "ConfigProdAuth",
+      "authenticationType": "xsuaa",
+       "csrfProtection": false,
+       "scope": {
+        "GET": [
+          "$XSAPPNAME.User"
+        ],
+        "PUT": [
+          "$XSAPPNAME.User"
+        ],
+        "PATCH": [
+          "$XSAPPNAME.User"
+        ],
+        "POST": [
+          "$XSAPPNAME.User"
+        ],
+        "DELETE": [
+          "$XSAPPNAME.User"
+        ],
+        "default": [
+          "$XSAPPNAME.User"
+        ]
+      }
+    },
+     {
             "source": "^/api/(.*)$",
             "target": "/api/$1",
             "destination": "chatbot-api",
