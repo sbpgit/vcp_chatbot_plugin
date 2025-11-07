@@ -132,9 +132,17 @@ sap.ui.define([
                 <img src="${logoPath}" width="32" height="32" style="border-radius:50%; background:white;"/>
                 <span>VC Planner Assistant</span>
             </div>`;
+            const clear = document.createElement("span");
+            clear.innerHTML = "🗑️";
+            clear.title = "Clear Chat";
+            clear.style.cursor = "pointer";
+            clear.style.marginRight = "12px";
+            clear.onclick = () => this._clearChatMessages();
+            header.appendChild(clear);
             const close = document.createElement("span");
             close.innerHTML = "✖";
             close.style.cursor = "pointer";
+            close.style.marginRight = "15px";
             close.onclick = () => {
                 panel.classList.remove("open");
                 panel.classList.add("closed");
@@ -188,13 +196,13 @@ sap.ui.define([
                 alignItems: "center",
                 gap: "8px",
                 boxShadow: "0 -2px 5px rgba(0,0,0,0.05)",
-                 zIndex: "10"
+                zIndex: "10"
             });
             body.appendChild(stickyInputBar);
 
             // TextArea input (auto-grow)
             const oTextArea = new TextArea("chatInput", {
-                placeholder: "Type a message...",
+                placeholder: "Message here...",
                 growing: true,
                 growingMaxLines: 6,
                 width: "100%",
@@ -311,7 +319,7 @@ sap.ui.define([
             oIcon.placeAt(scrollButton);
 
             // Scroll logic
-             function scrollDown(force) {
+            function scrollDown(force) {
 
                 const scrollDiv = document.getElementById("chat-scroll-wrapper");
 
@@ -362,20 +370,20 @@ sap.ui.define([
                 const oTyping = new HBox("typingIndicator", {
                     items: [
                         new Image({ src: "image/logo.png", width: "28px", height: "28px" }),
-                        new Text({ text: "🤖 Bot is typing..." })
+                        new Text({ text: "VC Planner Assistant is typing..." })
                     ]
                 });
                 oVBox.addItem(oTyping);
                 scrollDown();
 
                 setTimeout(function () {
-                     var userId = that.getUser().toLowerCase();
+                    var userId = that.getUser().toLowerCase();
                     // var userId = "shariefahamed@sbpcorp.in";
                     $.ajax({
                         url: "https://vcp_assistant_api.cfapps.us10-001.hana.ondemand.com/ask",
                         method: "POST",
                         contentType: "application/json",
-                        data: JSON.stringify({ "query": sMsg, "userid" : userId}),
+                        data: JSON.stringify({ "query": sMsg, "userid": userId }),
                         headers: {
                             "Authorization": that.token  // ✅ pass token here
                         },
@@ -433,6 +441,17 @@ sap.ui.define([
                 }
             }
         },
+        _clearChatMessages: function () {
+            const oVBox = sap.ui.getCore().byId("chatMessages");
+            if (oVBox) {
+                const aItems = oVBox.getItems();
+                aItems.forEach(item => item.destroy());
+                oVBox.addItem(new sap.m.Text({
+                    text: "Hello! I’m your VC Planner Assistant. How can I help you today?"
+                }).addStyleClass("chatBotBubble"));
+            }
+            // MessageToast.show("Chat cleared");
+        },
 
         _addStyles: function () {
             const style = document.createElement("style");
@@ -447,6 +466,13 @@ sap.ui.define([
                     transform: translateY(20px);
                     pointer-events: none;
                 }
+                    #chatbot-panel span[title="Clear Chat"] {
+  transition: transform 0.15s ease;
+  margin-left: 6rem;
+}
+#chatbot-panel span[title="Clear Chat"]:hover {
+  transform: scale(1.2);
+}
 
                 .chatUserBubble {
                     background: #0a6ed1;
@@ -473,7 +499,7 @@ sap.ui.define([
                 /* TextArea input (auto-grow, clean style) */
                 .chatInputField .sapMTextAreaInner {
                     border: 1.6px solid #0a6ed1 !important;
-                    border-radius: 10px !important;
+                    border-radius: 0px !important;
                     background: #fff !important;
                     color: #000 !important;
                     font-size: 0.95rem !important;

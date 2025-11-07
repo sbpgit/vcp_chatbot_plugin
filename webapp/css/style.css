@@ -43,7 +43,7 @@
 
 #chatbot-panel {
     width: 420px !important;
-    height: 550px !important;
+    height: 720px !important;
     border-radius: 12px !important;
     background-color: var(--sapBackgroundColor, #fff) !important;
     color: var(--sapTextColor, #000) !important;
@@ -172,6 +172,17 @@
     background: #fff !important;
     box-sizing: border-box;
     padding: 6px 8px;
+    margin-right: 1px !important;
+}
+
+.sapMTextArea .sapMInputBaseContentWrapper {
+    -webkit-overflow-scrolling: touch;
+    height: 100%;
+    width: 100%;
+    line-height: 0;
+    display: block;
+    padding: .0625rem;
+    border-radius: 0px;
 }
 
 /* ===========================================================
