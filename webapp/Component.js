@@ -114,7 +114,7 @@ sap.ui.define([
             });
             document.body.appendChild(panel);
 
-            // Header
+            // === Header ===
             const header = document.createElement("div");
             Object.assign(header.style, {
                 background: "#0a6ed1",
@@ -132,26 +132,43 @@ sap.ui.define([
                 <img src="${logoPath}" width="32" height="32" style="border-radius:50%; background:white;"/>
                 <span>VC Planner Assistant</span>
             </div>`;
-            const clear = document.createElement("span");
-            clear.innerHTML = "🗑️";
-            clear.title = "Clear Chat";
-            clear.style.cursor = "pointer";
-            clear.style.marginRight = "12px";
-            clear.onclick = () => this._clearChatMessages();
-            header.appendChild(clear);
-            const close = document.createElement("span");
-            close.innerHTML = "✖";
-            close.style.cursor = "pointer";
-            close.style.marginRight = "15px";
-            
-            close.onclick = () => {
-                panel.classList.remove("open");
-                panel.classList.add("closed");
-            };
-            header.appendChild(close);
+
+            const rightIcons = document.createElement("div");
+            rightIcons.style.display = "flex";
+            rightIcons.style.alignItems = "center";
+            rightIcons.style.gap = "10px";
+
+            // ✖ Close icon
+            const closeIcon = new Icon({
+                src: "sap-icon://decline",
+                size: "1.2rem",
+                color: "white",
+                tooltip: "Close Chat",
+                press: () => {
+                    panel.classList.remove("open");
+                    panel.classList.add("closed");
+                }
+            });
+            closeIcon.addStyleClass("chatHeaderIcon");
+
+            // 🗑️ Clear chat icon
+            const clearIcon = new Icon({
+                src: "sap-icon://delete",
+                size: "1.2rem",
+                color: "white",
+                tooltip: "Clear Chat",
+                press: () => this._clearChatMessages()
+            });
+            clearIcon.addStyleClass("chatHeaderIcon");
+
+            // 🧩 Swap order — delete first, close second
+            clearIcon.placeAt(rightIcons);
+            closeIcon.placeAt(rightIcons);
+
+            header.appendChild(rightIcons);
             panel.appendChild(header);
 
-            // Body
+            // === Body ===
             const body = document.createElement("div");
             Object.assign(body.style, {
                 flex: "1",
@@ -162,7 +179,6 @@ sap.ui.define([
             });
             panel.appendChild(body);
 
-            // Scroll area
             const scrollWrapper = document.createElement("div");
             Object.assign(scrollWrapper.style, {
                 flex: "1",
@@ -173,16 +189,17 @@ sap.ui.define([
             });
             scrollWrapper.id = "chat-scroll-wrapper";
             body.appendChild(scrollWrapper);
-
+            const username = this.getUser().split("@")[0];
             const oVBox = new VBox("chatMessages", {
                 width: "100%",
                 items: [
-                    new Text({ text: "Hello! I’m your VC Planner Assistant. How can I help you today?" }).addStyleClass("chatBotBubble")
+                    new Text({ text: "Hello "+username+". How can I help you today?" })
+                        .addStyleClass("chatBotBubble")
                 ]
             });
             oVBox.placeAt(scrollWrapper);
 
-            // Input Bar
+            // === Sticky Input Bar ===
             const stickyInputBar = document.createElement("div");
             stickyInputBar.id = "stickyInputBar";
             Object.assign(stickyInputBar.style, {
@@ -193,15 +210,25 @@ sap.ui.define([
                 background: "#fff",
                 borderTop: "1px solid #ccc",
                 padding: "8px 10px",
-                display: "flex",
-                alignItems: "center",
-                gap: "8px",
-                boxShadow: "0 -2px 5px rgba(0,0,0,0.05)",
-                zIndex: "10"
+                boxShadow: "0 -2px 5px rgba(0,0,0,0.05)"
             });
             body.appendChild(stickyInputBar);
 
-            // TextArea input (auto-grow)
+            // === Joule-style input & send button ===
+            const inputContainer = document.createElement("div");
+            inputContainer.id = "chatInputContainer";
+            Object.assign(inputContainer.style, {
+                display: "flex",
+                alignItems: "center",
+                border: "1.6px solid #0a6ed1",
+                borderRadius: "25px",
+                padding: "6px 10px",
+                background: "#fff",
+                width: "95%",
+                boxSizing: "border-box",
+                boxShadow: "0 0 5px rgba(106,27,154,0.2)"
+            });
+
             const oTextArea = new TextArea("chatInput", {
                 placeholder: "Message here...",
                 growing: true,
@@ -214,9 +241,26 @@ sap.ui.define([
                         sendMessage(val.trim());
                     }
                 }
-            }).addStyleClass("chatInputField");
+            }).addStyleClass("jouleInputField");
 
-            // Keyboard shortcut: Enter to send, Shift+Enter for newline
+            const oSendBtn = new Button({
+                icon: "sap-icon://paper-plane",
+                tooltip: "Send",
+                press: function () {
+                    const sMsg = oTextArea.getValue().trim();
+                    if (sMsg) {
+                        oTextArea.setValue("");
+                        sendMessage(sMsg);
+                    }
+                }
+            }).addStyleClass("jouleSendButton");
+
+            oTextArea.placeAt(inputContainer);
+            oSendBtn.placeAt(inputContainer);
+            stickyInputBar.appendChild(inputContainer);
+
+            sap.ui.getCore().applyChanges();
+
             oTextArea.addEventDelegate({
                 onkeydown: function (oEvent) {
                     if (oEvent.key === "Enter" && !oEvent.shiftKey) {
@@ -230,136 +274,50 @@ sap.ui.define([
                 }
             });
 
-            // Send Button
-            const oSendBtn = new Button({
-                icon: "sap-icon://paper-plane",
-                type: "Emphasized",
-                press: function () {
-                    const sMsg = oTextArea.getValue().trim();
-                    if (sMsg) {
-                        oTextArea.setValue("");
-                        sendMessage(sMsg);
-                    }
-                }
-            }).addStyleClass("chatSendBtn");
-
-            const oInputBar = new HBox({
-                width: "100%",
-                alignItems: "End",
-                justifyContent: "SpaceBetween",
-                items: [oTextArea, oSendBtn]
-            });
-            oInputBar.placeAt(stickyInputBar);
-
-            sap.ui.getCore().applyChanges();
-
-
-
-            // --- Scroll-to-bottom floating button (SAP icon) ---
-
+            // === Scroll button ===
             const scrollButton = document.createElement("div");
-
             scrollButton.id = "scrollToBottomBtn";
-
             Object.assign(scrollButton.style, {
-
                 position: "absolute",
-
                 bottom: "80px",
-
                 right: "15px",
-
                 background: "#0a6ed1",
-
                 color: "white",
-
                 borderRadius: "50%",
-
                 width: "36px",
-
                 height: "36px",
-
                 cursor: "pointer",
-
                 display: "none",
-
                 zIndex: "20",
-
                 boxShadow: "0 2px 5px rgba(0,0,0,0.3)",
-
                 alignItems: "center",
-
                 justifyContent: "center",
-
-                transition: "opacity 0.3s ease",
-
                 padding: "4px"
-
             });
-
             body.appendChild(scrollButton);
 
-
-
             const oIcon = new Icon({
-
                 src: "sap-icon://slim-arrow-down",
-
                 size: "1.2rem",
-
                 color: "white",
-
-                press: function () {
-
-                    scrollDown(true);
-
-                }
-
+                press: function () { scrollDown(true); }
             });
-
             oIcon.placeAt(scrollButton);
 
-            // Scroll logic
-            function scrollDown(force) {
-
-                const scrollDiv = document.getElementById("chat-scroll-wrapper");
-
-                if (scrollDiv) {
-
-                    setTimeout(() => {
-
-                        if (force) {
-
-                            scrollDiv.scrollTo({ top: scrollDiv.scrollHeight, behavior: "smooth" });
-
-                        } else {
-
-                            scrollDiv.scrollTop = scrollDiv.scrollHeight;
-
-                        }
-
-                    }, 150);
-
-                }
-
-            }
-            // --- Show/hide scroll-to-bottom button dynamically ---
-
             const scrollDiv = document.getElementById("chat-scroll-wrapper");
-
             scrollDiv.addEventListener("scroll", () => {
-
-                const scrollButton = document.getElementById("scrollToBottomBtn");
-
-                if (!scrollButton) return;
-
                 const nearBottom = scrollDiv.scrollHeight - scrollDiv.scrollTop - scrollDiv.clientHeight < 150;
-
-                scrollButton.style.opacity = nearBottom ? "0" : "1";
-
                 scrollButton.style.display = nearBottom ? "none" : "flex";
-
             });
+
+            function scrollDown(force) {
+                if (scrollDiv) {
+                    setTimeout(() => {
+                        if (force) scrollDiv.scrollTo({ top: scrollDiv.scrollHeight, behavior: "smooth" });
+                        else scrollDiv.scrollTop = scrollDiv.scrollHeight;
+                    }, 150);
+                }
+            }
 
             function sendMessage(sMsg) {
                 if (!sMsg) return;
@@ -369,48 +327,54 @@ sap.ui.define([
                 scrollDown();
 
                 const oTyping = new HBox("typingIndicator", {
+                    alignItems: "Center",
+                    justifyContent: "Start",
                     items: [
-                        new Image({ src: "image/logo.png", width: "28px", height: "28px" }),
-                        new Text({ text: "VC Planner Assistant is typing..." })
+                        new VBox({
+                            items: [
+                                new sap.ui.core.HTML({
+                                    content: `
+                        <div class="typing-bubble-container">
+                            <div class="typing-dot"></div>
+                            <div class="typing-dot"></div>
+                            <div class="typing-dot"></div>
+                        </div>
+                    `
+                                })
+                            ]
+                        })
                     ]
                 });
+
                 oVBox.addItem(oTyping);
                 scrollDown();
 
                 setTimeout(function () {
                     var userId = that.getUser().toLowerCase();
-                    // var userId = "shariefahamed@sbpcorp.in";
                     $.ajax({
                         url: "https://vcp_assistant_api.cfapps.us10-001.hana.ondemand.com/ask",
                         method: "POST",
                         contentType: "application/json",
                         data: JSON.stringify({ "query": sMsg, "userid": userId }),
-                        headers: {
-                            "Authorization": that.token  // ✅ pass token here
-                        },
+                        headers: { "Authorization": that.token },
                         success: function (data) {
                             removeTyping();
                             const oBotVBox = new VBox().addStyleClass("chatBotBubble");
                             if (data.response) {
-                                if (data.response.startsWith("An unexpected error")) {
-                                    oBotVBox.addItem(new Text({ text: "Sorry, I ran into an internal error. Please try again later." }));
-                                } else {
-                                    oBotVBox.addItem(new Text({ text: data.response }));
-                                }
+                                oBotVBox.addItem(new sap.m.FormattedText({
+                                    htmlText: data.response.startsWith("An unexpected error")
+                                        ? "Sorry, I ran into an internal error. Please try again later."
+                                        : data.response
+                                }));
                             }
-                            if (data.table) oBotVBox.addItem(new sap.ui.core.HTML({ content: data.table }));
-
-                            const oBotMsg = new HBox({
+                            if (data.table)
+                                oBotVBox.addItem(new sap.ui.core.HTML({ content: data.table }));
+                            oVBox.addItem(new HBox({
                                 items: [
-                                    new Image({
-                                        src: "image/logo.png",
-                                        width: "28px",
-                                        height: "28px"
-                                    }),
+                                    new Image({ src: "image/logo.png", width: "28px", height: "28px" }),
                                     oBotVBox
                                 ]
-                            });
-                            oVBox.addItem(oBotMsg);
+                            }));
                             sap.ui.getCore().applyChanges();
                             scrollDown();
                         },
@@ -418,11 +382,7 @@ sap.ui.define([
                             removeTyping();
                             oVBox.addItem(new HBox({
                                 items: [
-                                    new Image({
-                                        src: "image/logo.png",
-                                        width: "28px",
-                                        height: "28px"
-                                    }),
+                                    new Image({ src: "image/logo.png", width: "28px", height: "28px" }),
                                     new Text({ text: "🤖 " + xhr.statusText }).addStyleClass("chatBotBubble")
                                 ]
                             }));
@@ -436,105 +396,62 @@ sap.ui.define([
             function removeTyping() {
                 const oVBox = sap.ui.getCore().byId("chatMessages");
                 const oTyping = sap.ui.getCore().byId("typingIndicator");
-                if (oTyping) {
-                    oVBox.removeItem(oTyping);
-                    oTyping.destroy();
-                }
+                if (oTyping) { oVBox.removeItem(oTyping); oTyping.destroy(); }
             }
         },
+
         _clearChatMessages: function () {
             const oVBox = sap.ui.getCore().byId("chatMessages");
             if (oVBox) {
-                const aItems = oVBox.getItems();
-                aItems.forEach(item => item.destroy());
-                oVBox.addItem(new sap.m.Text({
-                    text: "Hello! I’m your VC Planner Assistant. How can I help you today?"
-                }).addStyleClass("chatBotBubble"));
+                oVBox.destroyItems();
+                oVBox.addItem(new sap.m.Text({ text: "Hello! I’m your VC Planner Assistant. How can I help you today?" })
+                    .addStyleClass("chatBotBubble"));
             }
-            // MessageToast.show("Chat cleared");
+            // sap.m.MessageToast.show("Chat cleared successfully");
         },
 
         _addStyles: function () {
             const style = document.createElement("style");
             style.innerHTML = `
-                #chatbot-panel.open {
-                    opacity: 1;
-                    transform: translateY(0);
-                    pointer-events: auto;
-                }
-                #chatbot-panel.closed {
-                    opacity: 0;
-                    transform: translateY(20px);
-                    pointer-events: none;
-                }
-                    #chatbot-panel span[title="Clear Chat"] {
-  transition: transform 0.15s ease;
-  margin-left: 6rem;
-}
-#chatbot-panel span[title="Clear Chat"]:hover {
-  transform: scale(1.2);
-}
+                #chatbot-panel.open { opacity: 1; transform: translateY(0); pointer-events: auto; }
+                #chatbot-panel.closed { opacity: 0; transform: translateY(20px); pointer-events: none; }
 
                 .chatUserBubble {
-                    background: #0a6ed1;
-                    color: white;
-                    padding: 8px 12px;
-                    border-radius: 12px;
-                    margin: 4px;
-                    max-width: 70%;
-                    align-self: flex-end;
-                    word-wrap: break-word;
+                    background: #0a6ed1; color: white; padding: 8px 12px;
+                    border-radius: 12px; margin: 4px; max-width: 70%;
+                    align-self: flex-end; word-wrap: break-word;
                 }
 
                 .chatBotBubble {
-                    background: #f2f2f2;
-                    color: #333;
-                    padding: 8px 12px;
-                    border-radius: 12px;
-                    margin: 4px;
-                    max-width: 70%;
-                    align-self: flex-start;
-                    word-wrap: break-word;
+                    background: #f2f2f2; color: #333; padding: 8px 12px;
+                    border-radius: 12px; margin: 4px; max-width: 90%;
+                    align-self: flex-start; word-wrap: break-word;
                 }
 
-                /* TextArea input (auto-grow, clean style) */
-                .chatInputField .sapMTextAreaInner {
-                    border: 1.6px solid #0a6ed1 !important;
-                    border-radius: 0px !important;
-                    background: #fff !important;
-                    color: #000 !important;
-                    font-size: 0.95rem !important;
-                    padding: 8px 12px !important;
-                    resize: none !important;
-                    min-height: 2.2rem !important;
-                    max-height: 8.5rem !important;
-                    overflow-y: auto !important;
-                    line-height: 1.4rem !important;
-                    box-shadow: none !important;
+                /* Joule-style input */
+                .jouleInputField .sapMTextAreaInner {
+                    border: none !important; outline: none !important;
+                    background: transparent !important; color: #333 !important;
+                    font-size: 0.95rem !important; padding: 6px 10px !important;
+                    resize: none !important; line-height: 1.4rem !important;
                 }
 
-                .chatInputField .sapMTextAreaInner:focus {
-                    border-color: #085caf !important;
-                    outline: none !important;
-                }
+                .jouleInputField .sapMTextAreaInner::placeholder { color: #999 !important; }
 
-                .chatSendBtn {
-                    height: 2.6rem !important;
-                    width: 2.6rem !important;
-                    border-radius: 10px !important;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    color: white !important;
-                    background-color: #0a6ed1 !important;
-                    border: none !important;
+                .jouleSendButton {
+                    border: none !important; background: #0a6ed1 !important;
+                 border-radius: 50% !important;
+                    height: 2.4rem !important; width: 2.4rem !important;
+                    margin-left: 6px !important;
                     transition: background 0.2s ease, transform 0.1s ease;
                 }
 
-                .chatSendBtn:hover {
-                    background: #085caf !important;
-                    transform: scale(1.05);
+                .jouleSendButton:hover {
+                    background: #0a6ed1 !important; transform: scale(1.1);
                 }
+
+                .chatHeaderIcon { cursor: pointer; transition: transform 0.2s ease, opacity 0.2s ease; }
+                .chatHeaderIcon:hover { transform: scale(1.2); opacity: 0.9; }
             `;
             document.head.appendChild(style);
         }

@@ -16,40 +16,27 @@
     cursor: pointer;
     transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
-
 .chatbotFloatingButton:hover {
     transform: scale(1.05);
     box-shadow: 0 6px 18px rgba(10, 110, 209, 0.35);
 }
-
 @keyframes pulse {
     0%, 100% { box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); }
     50% { box-shadow: 0 4px 20px rgba(10, 110, 209, 0.4); }
 }
 
-/* Alternate floating positions */
-.chatbot-position-bottom-left { bottom: 30px !important; left: 30px !important; right: auto !important; }
-.chatbot-position-top-right { top: 30px !important; bottom: auto !important; right: 30px !important; }
-.chatbot-position-top-left { top: 30px !important; bottom: auto !important; left: 30px !important; right: auto !important; }
-
 /* ===========================================================
    🧭  CHAT PANEL
    =========================================================== */
-.chatPopover {
-    border-radius: 12px !important;
-    width: 800px !important;
-    max-width: 95vw !important;
-}
-
 #chatbot-panel {
     width: 420px !important;
     height: 720px !important;
     border-radius: 12px !important;
     background-color: var(--sapBackgroundColor, #fff) !important;
     color: var(--sapTextColor, #000) !important;
+    border: 1px solid rgba(106, 27, 154, 0.15) !important;
+    box-shadow: 0 6px 20px rgba(106, 27, 154, 0.15) !important;
 }
-
-/* Responsive adjustments */
 @media (max-width: 600px) {
     #chatbot-panel {
         width: 90vw !important;
@@ -64,199 +51,219 @@
 .chatHeader {
     background: linear-gradient(135deg, #0a6ed1 0%, #0854a0 100%) !important;
     color: var(--sapShell_TextColor, #fff) !important;
-}
-
-.chatBotName {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    padding: 10px 12px !important;
     font-weight: 600 !important;
-    font-size: 1.1rem !important;
+    border-top-left-radius: 12px !important;
+    border-top-right-radius: 12px !important;
 }
-
-.chatStatus {
-    color: rgba(255, 255, 255, 0.85) !important;
-    font-size: 0.875rem !important;
+.chatHeaderIcon {
+    cursor: pointer;
+    transition: transform 0.2s ease, opacity 0.2s ease;
 }
-
-.chatStatusOnline { color: #4caf50 !important; }
+.chatHeaderIcon:hover {
+    transform: scale(1.2);
+    opacity: 0.9;
+}
 
 /* ===========================================================
    💬  MESSAGE BUBBLES
    =========================================================== */
-.chatMessagesArea {
-    background-color: var(--sapList_Background, #f5f7fa) !important;
-}
-
-.userMessageBox {
+.chatUserBubble {
     background: linear-gradient(135deg, #0a6ed1 0%, #0854a0 100%) !important;
+    color: #fff !important;
     padding: 10px 15px !important;
     border-radius: 18px !important;
     border-bottom-right-radius: 4px !important;
     max-width: 70% !important;
     margin: 5px 0 !important;
+    align-self: flex-end !important;
+    word-wrap: break-word !important;
 }
-
-.botMessageBox {
-    background: var(--sapTile_Background, #fff) !important;
-    padding: 10px 15px !important;
+.chatBotBubble {
+    color: var(--sapTextColor, #333) !important;
+    /* background: #ffffff !important; /* ensures clean white bubble */
+    padding: 10px 15px !important; /* ← FIX: adds proper inner spacing */
     border-radius: 18px !important;
     border-bottom-left-radius: 4px !important;
     border: 1px solid var(--sapList_BorderColor, #e0e0e0) !important;
-    max-width: 70% !important;
+    max-width: 90% !important;
     margin: 5px 0 !important;
-}
-
-.userMessageText {
-    color: #fff !important;
+    align-self: flex-start !important;
     word-wrap: break-word !important;
+    white-space: pre-wrap !important;  /* preserves line breaks */
+    overflow-wrap: anywhere !important;
+    box-sizing: border-box !important; /* ensures consistent padding handling */
+    box-shadow: 0 1px 4px rgba(10, 110, 209, 0.08) !important;
 }
-
-.botMessageText {
-    color: var(--sapTextColor, #333) !important;
-    word-wrap: break-word !important;
-}
-
-.messageTimestamp {
-    font-size: 0.75rem !important;
-    color: var(--sapContent_LabelColor, #999) !important;
-    margin-top: 4px !important;
-}
-
-.typingIndicatorBox {
-    background: var(--sapTile_Background, #fff) !important;
-    padding: 10px 15px !important;
-    border-radius: 18px !important;
-    border: 1px solid var(--sapList_BorderColor, #e0e0e0) !important;
-}
-
-.typingText {
-    color: var(--sapContent_LabelColor, #999) !important;
-    font-style: italic !important;
-}
-
-.chatBotBubble {
-    background-color: var(--sapTile_Background, #f0f0f0);
-    border-radius: 10px;
-    padding: 8px 12px;
-    margin-left: 8px;
-    display: inline-block;
-    max-width: 80%;
-}
-
-.chatBotBubble table {
-    border-collapse: collapse;
-    width: 100%;
-    margin-top: 6px;
-    border-radius: 6px;
-    overflow: hidden;
-}
-
-.chatBotBubble th, .chatBotBubble td {
-    border: 1px solid #ccc;
-    padding: 6px 10px;
-    text-align: left;
-    font-size: 0.875rem;
+.sapMTextMaxWidth {
+    max-width: 100%;
 }
 
 /* ===========================================================
-   🧠  INPUT AREA
+   🧠  INPUT AREA (Joule-Style)
    =========================================================== */
-.chatInputArea {
-    border-top: 1px solid var(--sapList_BorderColor, #e0e0e0) !important;
-    background: var(--sapBackgroundColor, #fff) !important;
-}
-
-.chatInputBar {
+#chatInputContainer {
     display: flex;
-    align-items: flex-end;
+    align-items: center;
+    border: 2px solid transparent;
+    background-image: linear-gradient(#fff, #fff),
+                      linear-gradient(135deg, #0a6ed1, #0854a0);
+    background-origin: border-box;
+    background-clip: content-box, border-box;
+    border-radius: 25px;
+    padding: 6px 10px;
+    background-color: #fff;
     width: 100%;
-    border-radius: 10px !important;
-    background: #fff !important;
     box-sizing: border-box;
-    padding: 6px 8px;
-    margin-right: 1px !important;
+    box-shadow: 0 0 5px rgba(106,27,154,0.2);
+    transition: box-shadow 0.3s ease;
 }
-
-.sapMTextArea .sapMInputBaseContentWrapper {
-    -webkit-overflow-scrolling: touch;
-    height: 100%;
-    width: 100%;
-    line-height: 0;
-    display: block;
-    padding: .0625rem;
-    border-radius: 0px;
+#chatInputContainer:focus-within {
+    box-shadow: 0 0 10px rgba(156, 39, 176, 0.25);
 }
 
 /* ===========================================================
-   📝  TEXT INPUT STYLING
+   ✏️  TEXT INPUT REFINEMENT
    =========================================================== */
-.chatInputField .sapMTextAreaInner {
-    border: 1.6px solid var(--sapActiveColor, #0a6ed1) !important;
-    border-radius: 10px !important;
-    background: var(--sapField_Background, #fff) !important;
-    color: var(--sapTextColor, #000) !important;
-    font-size: 0.95rem !important;
-    padding: 8px 12px !important;
-    resize: none !important;
-    min-height: 2.2rem !important;
-    max-height: 8.5rem !important; /* ≈ 6 lines */
-    overflow-y: auto !important;
-    line-height: 1.4rem !important;
+.jouleInputField.sapMInputBase,
+.jouleInputField .sapMInputBaseContentWrapper {
+    background: transparent !important;
+    border: none !important;
     box-shadow: none !important;
-    transition: height 0.15s ease-out, border-color 0.2s ease;
+    outline: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
 }
-
-.chatInputField .sapMTextAreaInner:focus {
-    border-color: var(--sapHighlightColor, #085caf) !important;
+.jouleInputField .sapMInputBaseContentWrapper:before,
+.jouleInputField .sapMInputBaseContentWrapper:after {
+    border: none !important;
+    box-shadow: none !important;
+}
+.jouleInputField.sapMInputBase:hover,
+.jouleInputField.sapMInputBase:focus-within {
+    background: transparent !important;
+    box-shadow: none !important;
+    border: none !important;
+}
+.jouleInputField .sapMTextAreaInner {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    color: #333 !important;
+    resize: none !important;
+    font-size: 0.95rem !important;
+    padding: 6px 10px !important;
+    line-height: 1.4rem !important;
+}
+.jouleInputField .sapMTextAreaInner:focus,
+.jouleInputField .sapMTextAreaInner:hover {
+    border: none !important;
+    background: transparent !important;
+    box-shadow: none !important;
     outline: none !important;
 }
 
-/* Custom Scrollbar */
-.chatInputField .sapMTextAreaInner::-webkit-scrollbar {
-    width: 6px;
+/* Placeholder style */
+.jouleInputField .sapMTextAreaInner::placeholder {
+    color: #0a6ed1 !important;
+    opacity: 0.9;
+    font-style: italic;
 }
-.chatInputField .sapMTextAreaInner::-webkit-scrollbar-thumb {
-    background-color: rgba(10, 110, 209, 0.3);
-    border-radius: 3px;
-}
-.chatInputField .sapMTextAreaInner::-webkit-scrollbar-thumb:hover {
-    background-color: rgba(10, 110, 209, 0.6);
-}
-
-.sapMInputBase.sapMTextArea {
-    height: 4rem !important;
-    min-height: 2.5rem;
-    min-width: 23rem !important;
-}
-
 /* ===========================================================
-   📤  SEND BUTTON
+   📤  SEND BUTTON — SAP Blue Round with White Paper Plane
    =========================================================== */
-.chatSendBtn {
+.jouleSendButton {
+    border: none !important;
+    border-radius: 50% !important;
     height: 2.6rem !important;
     width: 2.6rem !important;
-    border-radius: 10px !important;
+    min-height: 2.6rem !important;
+    min-width: 2.6rem !important;
+    margin-left: 8px !important;
+    box-shadow: 0 3px 8px rgba(10, 110, 209, 0.25) !important;
+    transition: all 0.2s ease-in-out !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+}
+
+/* Inner element (UI5 actual button renderer) */
+.jouleSendButton .sapMBtnInner {
+    background: linear-gradient(135deg, #0a6ed1, #0854a0) !important;
+    border: none !important;
+    border-radius: 50% !important;
+    height: 100% !important;
+    width: 100% !important;
+    min-height: 100% !important;
+    min-width: 100% !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+}
+
+/* Icon inside the button */
+.jouleSendButton .sapMBtnInner .sapUiIcon {
+    color: #ffffff !important;
+    font-size: 1.25rem !important;
+    line-height: 1 !important;
+    margin: 0 !important;
+}
+
+/* Hover and active state */
+.jouleSendButton:hover .sapMBtnInner {
+    background: linear-gradient(135deg, #0854a0, #07407c) !important;
+    transform: scale(1.08);
+}
+
+.jouleSendButton:active .sapMBtnInner {
+    background: #07407c !important;
+    transform: scale(0.96);
+}
+/* ===========================================================
+   💬  Typing Indicator Dots Animation
+   =========================================================== */
+.typing-bubble-container {
     display: flex;
     align-items: center;
-    justify-content: center;
-    color: var(--sapButton_Emphasized_TextColor, #fff) !important;
-    background-color: var(--sapButton_Emphasized_Background, #0a6ed1) !important;
-    border: none !important;
-    box-shadow: none !important;
-    margin-left: 0px !important;
-    transition: background 0.2s ease, transform 0.1s ease;
-    margin-right: 3.5rem !important;
-    margin-bottom: 1.1rem !important;
+    justify-content: flex-start;
+    gap: 6px;
+    padding: 8px 14px;
+    background: #f5f7fa;
+    border-radius: 20px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+    margin-left: 32px; /* offset similar to chat bubble indent */
+    width: fit-content;
 }
 
-.chatSendBtn:hover {
-    background: var(--sapButton_Emphasized_Hover_Background, #085caf) !important;
-    transform: scale(1.05);
+.typing-dot {
+    width: 8px;
+    height: 8px;
+    background-color: #0a6ed1;
+    border-radius: 50%;
+    animation: typingBounce 1.2s infinite ease-in-out;
 }
 
-/* ===========================================================
-   ⚙️  QUICK REPLIES AREA
-   =========================================================== */
-.quickRepliesArea {
-    padding: 10px !important;
-    border-top: 1px solid var(--sapList_BorderColor, #e0e0e0) !important;
-    background: var(--sapBackgroundColor, #fff) !important;
+.typing-dot:nth-child(1) {
+    animation-delay: 0s;
+}
+.typing-dot:nth-child(2) {
+    animation-delay: 0.2s;
+}
+.typing-dot:nth-child(3) {
+    animation-delay: 0.4s;
+}
+
+@keyframes typingBounce {
+    0%, 80%, 100% {
+        transform: translateY(0);
+        opacity: 0.5;
+    }
+    40% {
+        transform: translateY(-6px);
+        opacity: 1;
+    }
 }
