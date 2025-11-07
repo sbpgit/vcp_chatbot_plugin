@@ -143,6 +143,7 @@ sap.ui.define([
             close.innerHTML = "✖";
             close.style.cursor = "pointer";
             close.style.marginRight = "15px";
+            
             close.onclick = () => {
                 panel.classList.remove("open");
                 panel.classList.add("closed");
