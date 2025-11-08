@@ -78,7 +78,7 @@ sap.ui.define([
             const oChatButton = new Button({
                 icon: "sap-icon://discussion",
                 type: "Emphasized",
-                tooltip: "Open Chat",
+                tooltip: "VC Planner Chat Assistant",
                 press: function () {
                     const oPanel = document.getElementById("chatbot-panel");
                     if (oPanel.classList.contains("open")) {
@@ -193,7 +193,7 @@ sap.ui.define([
             const oVBox = new VBox("chatMessages", {
                 width: "100%",
                 items: [
-                    new Text({ text: "Hello "+username+". How can I help you today?" })
+                    new Text({ text: "Hello " + username + ". How can I help you today?" })
                         .addStyleClass("chatBotBubble")
                 ]
             });
@@ -330,22 +330,17 @@ sap.ui.define([
                     alignItems: "Center",
                     justifyContent: "Start",
                     items: [
-                        new VBox({
-                            items: [
-                                new sap.ui.core.HTML({
-                                    content: `
-                        <div class="typing-bubble-container">
-                            <div class="typing-dot"></div>
-                            <div class="typing-dot"></div>
-                            <div class="typing-dot"></div>
-                        </div>
-                    `
-                                })
-                            ]
+                        new sap.ui.core.HTML({
+                            content: `
+            <div class="typing-joule-container clean">
+                <div class="typing-dot"></div>
+                <div class="typing-dot"></div>
+                <div class="typing-dot"></div>
+            </div>
+            `
                         })
                     ]
                 });
-
                 oVBox.addItem(oTyping);
                 scrollDown();
 
@@ -396,18 +391,38 @@ sap.ui.define([
             function removeTyping() {
                 const oVBox = sap.ui.getCore().byId("chatMessages");
                 const oTyping = sap.ui.getCore().byId("typingIndicator");
-                if (oTyping) { oVBox.removeItem(oTyping); oTyping.destroy(); }
+
+                if (oTyping) {
+                    const oHtml = oTyping.getItems()[0]?.getItems?.()[0];
+                    const $typing = oHtml?.getDomRef();
+                    if ($typing) {
+                        $typing.classList.add("fade-out"); // trigger fade animation
+                        setTimeout(() => {
+                            oVBox.removeItem(oTyping);
+                            oTyping.destroy();
+                        }, 400); // match animation duration
+                    } else {
+                        oVBox.removeItem(oTyping);
+                        oTyping.destroy();
+                    }
+                }
             }
+
         },
 
         _clearChatMessages: function () {
             const oVBox = sap.ui.getCore().byId("chatMessages");
             if (oVBox) {
                 oVBox.destroyItems();
-                oVBox.addItem(new sap.m.Text({ text: "Hello! I’m your VC Planner Assistant. How can I help you today?" })
+                const username = this.getUser().split("@")[0];
+                oVBox.addItem(new Text({ text: "Hello " + username + ". How can I help you today?" })
                     .addStyleClass("chatBotBubble"));
             }
-            // sap.m.MessageToast.show("Chat cleared successfully");
+            // 🧹 Reset scroll and hide "scroll down" button
+            const scrollDiv = document.getElementById("chat-scroll-wrapper");
+            const scrollBtn = document.getElementById("scrollToBottomBtn");
+            if (scrollDiv) scrollDiv.scrollTop = 0;
+            if (scrollBtn) scrollBtn.style.display = "none";
         },
 
         _addStyles: function () {

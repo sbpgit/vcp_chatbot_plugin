@@ -267,3 +267,76 @@
         opacity: 1;
     }
 }
+
+/* works even if UI5 prefixes the id */
+[id$="chat-scroll-wrapper"] { padding-bottom: 25px !important; }
+[id$="chat-scroll-wrapper"] .chatBotBubble:last-child,
+[id$="chat-scroll-wrapper"] .chatUserBubble:last-child { margin-bottom: 12px !important; }
+
+#stickyInputBar { border-top-left-radius: 12px !important; border-top-right-radius: 12px !important; box-shadow: 0 -2px 10px rgba(0,0,0,.06) !important; }
+
+/* ===========================================================
+   💫  CLEAN JOULE-STYLE TYPING INDICATOR (BIGGER VERSION)
+   =========================================================== */
+.typing-joule-container.clean {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 10px;              /* Slightly wider spacing between dots */
+    margin-left: 36px;
+    margin-top: 6px;
+    margin-bottom: 8px;
+    height: 24px;           /* Increased height to fit larger dots */
+    background: transparent !important;
+    box-shadow: none !important;
+    border: none !important;
+}
+
+/* Larger dots with subtle glow */
+.typing-joule-container.clean .typing-dot {
+    width: 16px;            /* increased from 10px */
+    height: 16px;           /* increased from 10px */
+    border-radius: 50%;
+    background: linear-gradient(135deg, #0a6ed1, #0854a0);
+    animation: jouleTypingFade 1.4s infinite ease-in-out;
+    opacity: 0.6;
+    /* box-shadow: 0 0 8px rgba(10, 110, 209, 0.4); soft glow */
+}
+
+/* Adjust timing delays for smoother rhythm */
+.typing-joule-container.clean .typing-dot:nth-child(1) { animation-delay: 0s; }
+.typing-joule-container.clean .typing-dot:nth-child(2) { animation-delay: 0.4s; }
+.typing-joule-container.clean .typing-dot:nth-child(3) { animation-delay: 0.65s; }
+
+/* Smooth fade & pulse animation */
+@keyframes jouleTypingFade {
+    0%, 80%, 100% {
+        opacity: 0.3;
+        transform: scale(0.8);
+    }
+    40% {
+        opacity: 1;
+        transform: scale(1.25);
+    }
+}
+
+
+/* ===========================================================
+   ✨ FADE-OUT TRANSITION FOR TYPING INDICATOR
+   =========================================================== */
+.fade-out {
+    animation: fadeOut 0.4s ease forwards;
+}
+
+@keyframes fadeOut {
+    0% { opacity: 1; transform: scale(1); }
+    100% { opacity: 0; transform: scale(0.9); }
+}
+.chatBotBubble {
+    animation: fadeInBot 0.3s ease;
+}
+
+@keyframes fadeInBot {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: translateY(0); }
+}
