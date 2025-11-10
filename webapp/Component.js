@@ -99,7 +99,7 @@ sap.ui.define([
             panel.className = "closed";
             Object.assign(panel.style, {
                 width: "420px",
-                height: "550px",
+                height: "60rem",
                 position: "fixed",
                 bottom: "70px",
                 right: "20px",
@@ -110,7 +110,7 @@ sap.ui.define([
                 display: "flex",
                 flexDirection: "column",
                 overflow: "hidden",
-                zIndex: "1000"
+                zIndex: "12000"
             });
             document.body.appendChild(panel);
 
@@ -345,40 +345,65 @@ sap.ui.define([
                 scrollDown();
 
                 setTimeout(function () {
-                    var userId = that.getUser().toLowerCase();
+                    const userId = that.getUser().toLowerCase();
+
                     $.ajax({
                         url: "https://vcp_assistant_api.cfapps.us10-001.hana.ondemand.com/ask",
                         method: "POST",
                         contentType: "application/json",
-                        data: JSON.stringify({ "query": sMsg, "userid": userId }),
-                        headers: { "Authorization": that.token },
+                        data: JSON.stringify({ query: sMsg, userid: userId }),
+                        headers: { Authorization: that.token },
+
                         success: function (data) {
                             removeTyping();
+
                             const oBotVBox = new VBox().addStyleClass("chatBotBubble");
-                            if (data.response) {
-                                oBotVBox.addItem(new sap.m.FormattedText({
-                                    htmlText: data.response.startsWith("An unexpected error")
-                                        ? "Sorry, I ran into an internal error. Please try again later."
-                                        : data.response
+
+                            if (data && data.response) {
+                                const responseText = data.response.trim();
+
+                                // 🔹 If response contains HTML table, render full HTML
+                                if (responseText.includes("<table")) {
+                                    oBotVBox.addItem(new sap.ui.core.HTML({
+                                        content: responseText
+                                    }));
+                                } else {
+                                    // 🔹 Otherwise use FormattedText for safe rendering
+                                    oBotVBox.addItem(new sap.m.FormattedText({
+                                        htmlText: responseText.startsWith("An unexpected error")
+                                            ? "Sorry, I ran into an internal error. Please try again later."
+                                            : responseText
+                                    }));
+                                }
+                            }
+
+                            // 🔹 Handle separate 'table' property (if API returns it separately)
+                            if (data.table) {
+                                oBotVBox.addItem(new sap.ui.core.HTML({
+                                    content: data.table
                                 }));
                             }
-                            if (data.table)
-                                oBotVBox.addItem(new sap.ui.core.HTML({ content: data.table }));
+
+                            // 🔹 Add bot message with logo
                             oVBox.addItem(new HBox({
                                 items: [
                                     new Image({ src: "image/logo.png", width: "28px", height: "28px" }),
                                     oBotVBox
                                 ]
                             }));
+
                             sap.ui.getCore().applyChanges();
                             scrollDown();
                         },
+
                         error: function (xhr) {
                             removeTyping();
                             oVBox.addItem(new HBox({
                                 items: [
                                     new Image({ src: "image/logo.png", width: "28px", height: "28px" }),
-                                    new Text({ text: "🤖 " + xhr.statusText }).addStyleClass("chatBotBubble")
+                                    new Text({
+                                        text: "🤖 " + (xhr.statusText || "Error contacting assistant")
+                                    }).addStyleClass("chatBotBubble")
                                 ]
                             }));
                             sap.ui.getCore().applyChanges();

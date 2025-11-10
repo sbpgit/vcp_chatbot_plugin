@@ -16,13 +16,22 @@
     cursor: pointer;
     transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
+
 .chatbotFloatingButton:hover {
     transform: scale(1.05);
     box-shadow: 0 6px 18px rgba(10, 110, 209, 0.35);
 }
+
 @keyframes pulse {
-    0%, 100% { box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); }
-    50% { box-shadow: 0 4px 20px rgba(10, 110, 209, 0.4); }
+
+    0%,
+    100% {
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    50% {
+        box-shadow: 0 4px 20px rgba(10, 110, 209, 0.4);
+    }
 }
 
 /* ===========================================================
@@ -36,7 +45,10 @@
     color: var(--sapTextColor, #000) !important;
     border: 1px solid rgba(106, 27, 154, 0.15) !important;
     box-shadow: 0 6px 20px rgba(106, 27, 154, 0.15) !important;
+    z-index: 12000 !important;
+    position: fixed !important;
 }
+
 @media (max-width: 600px) {
     #chatbot-panel {
         width: 90vw !important;
@@ -59,10 +71,12 @@
     border-top-left-radius: 12px !important;
     border-top-right-radius: 12px !important;
 }
+
 .chatHeaderIcon {
     cursor: pointer;
     transition: transform 0.2s ease, opacity 0.2s ease;
 }
+
 .chatHeaderIcon:hover {
     transform: scale(1.2);
     opacity: 0.9;
@@ -82,10 +96,12 @@
     align-self: flex-end !important;
     word-wrap: break-word !important;
 }
+
 .chatBotBubble {
     color: var(--sapTextColor, #333) !important;
     /* background: #ffffff !important; /* ensures clean white bubble */
-    padding: 10px 15px !important; /* ← FIX: adds proper inner spacing */
+    padding: 10px 15px !important;
+    /* ← FIX: adds proper inner spacing */
     border-radius: 18px !important;
     border-bottom-left-radius: 4px !important;
     border: 1px solid var(--sapList_BorderColor, #e0e0e0) !important;
@@ -93,13 +109,51 @@
     margin: 5px 0 !important;
     align-self: flex-start !important;
     word-wrap: break-word !important;
-    white-space: pre-wrap !important;  /* preserves line breaks */
+    white-space: pre-wrap !important;
+    /* preserves line breaks */
     overflow-wrap: anywhere !important;
-    box-sizing: border-box !important; /* ensures consistent padding handling */
+    box-sizing: border-box !important;
+    /* ensures consistent padding handling */
     box-shadow: 0 1px 4px rgba(10, 110, 209, 0.08) !important;
 }
+
 .sapMTextMaxWidth {
     max-width: 100%;
+}
+
+.chatBotBubble table {
+  border-collapse: collapse;
+  width: 100%;
+  margin-top: 6px;
+  border: 1px solid #ddd;
+  font-size: 0.85rem;
+}
+
+.chatBotBubble th, .chatBotBubble td {
+  border: 1px solid #ddd;
+  padding: 6px 8px;
+  text-align: left;
+}
+
+.chatBotBubble th {
+  background-color: #f0f8ff;
+  font-weight: 600;
+}
+
+.chatBotBubble tr:nth-child(even) {
+  background-color: #fafafa;
+}
+
+.chatBotBubble {
+  max-width: 95% !important;
+  overflow-x: auto !important;    /* ✅ allows horizontal scroll */
+  display: block !important;      /* ✅ ensures the scroll container works */
+}
+
+/* Optional: make wide tables activate scroll */
+.chatBotBubble table {
+  min-width: 500px;               /* ✅ ensures scroll triggers on smaller screens */
+  table-layout: auto;
 }
 
 /* ===========================================================
@@ -110,7 +164,7 @@
     align-items: center;
     border: 2px solid transparent;
     background-image: linear-gradient(#fff, #fff),
-                      linear-gradient(135deg, #0a6ed1, #0854a0);
+        linear-gradient(135deg, #0a6ed1, #0854a0);
     background-origin: border-box;
     background-clip: content-box, border-box;
     border-radius: 25px;
@@ -118,9 +172,10 @@
     background-color: #fff;
     width: 100%;
     box-sizing: border-box;
-    box-shadow: 0 0 5px rgba(106,27,154,0.2);
+    box-shadow: 0 0 5px rgba(106, 27, 154, 0.2);
     transition: box-shadow 0.3s ease;
 }
+
 #chatInputContainer:focus-within {
     box-shadow: 0 0 10px rgba(156, 39, 176, 0.25);
 }
@@ -137,17 +192,20 @@
     padding: 0 !important;
     margin: 0 !important;
 }
+
 .jouleInputField .sapMInputBaseContentWrapper:before,
 .jouleInputField .sapMInputBaseContentWrapper:after {
     border: none !important;
     box-shadow: none !important;
 }
+
 .jouleInputField.sapMInputBase:hover,
 .jouleInputField.sapMInputBase:focus-within {
     background: transparent !important;
     box-shadow: none !important;
     border: none !important;
 }
+
 .jouleInputField .sapMTextAreaInner {
     background: transparent !important;
     border: none !important;
@@ -158,6 +216,7 @@
     padding: 6px 10px !important;
     line-height: 1.4rem !important;
 }
+
 .jouleInputField .sapMTextAreaInner:focus,
 .jouleInputField .sapMTextAreaInner:hover {
     border: none !important;
@@ -172,6 +231,7 @@
     opacity: 0.9;
     font-style: italic;
 }
+
 /* ===========================================================
    📤  SEND BUTTON — SAP Blue Round with White Paper Plane
    =========================================================== */
@@ -223,6 +283,7 @@
     background: #07407c !important;
     transform: scale(0.96);
 }
+
 /* ===========================================================
    💬  Typing Indicator Dots Animation
    =========================================================== */
@@ -234,8 +295,9 @@
     padding: 8px 14px;
     background: #f5f7fa;
     border-radius: 20px;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
-    margin-left: 32px; /* offset similar to chat bubble indent */
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+    margin-left: 32px;
+    /* offset similar to chat bubble indent */
     width: fit-content;
 }
 
@@ -250,18 +312,24 @@
 .typing-dot:nth-child(1) {
     animation-delay: 0s;
 }
+
 .typing-dot:nth-child(2) {
     animation-delay: 0.2s;
 }
+
 .typing-dot:nth-child(3) {
     animation-delay: 0.4s;
 }
 
 @keyframes typingBounce {
-    0%, 80%, 100% {
+
+    0%,
+    80%,
+    100% {
         transform: translateY(0);
         opacity: 0.5;
     }
+
     40% {
         transform: translateY(-6px);
         opacity: 1;
@@ -269,11 +337,20 @@
 }
 
 /* works even if UI5 prefixes the id */
-[id$="chat-scroll-wrapper"] { padding-bottom: 25px !important; }
-[id$="chat-scroll-wrapper"] .chatBotBubble:last-child,
-[id$="chat-scroll-wrapper"] .chatUserBubble:last-child { margin-bottom: 12px !important; }
+[id$="chat-scroll-wrapper"] {
+    padding-bottom: 25px !important;
+}
 
-#stickyInputBar { border-top-left-radius: 12px !important; border-top-right-radius: 12px !important; box-shadow: 0 -2px 10px rgba(0,0,0,.06) !important; }
+[id$="chat-scroll-wrapper"] .chatBotBubble:last-child,
+[id$="chat-scroll-wrapper"] .chatUserBubble:last-child {
+    margin-bottom: 12px !important;
+}
+
+#stickyInputBar {
+    border-top-left-radius: 12px !important;
+    border-top-right-radius: 12px !important;
+    box-shadow: 0 -2px 10px rgba(0, 0, 0, .06) !important;
+}
 
 /* ===========================================================
    💫  CLEAN JOULE-STYLE TYPING INDICATOR (BIGGER VERSION)
@@ -282,11 +359,13 @@
     display: flex;
     align-items: center;
     justify-content: flex-start;
-    gap: 10px;              /* Slightly wider spacing between dots */
+    gap: 10px;
+    /* Slightly wider spacing between dots */
     margin-left: 36px;
     margin-top: 6px;
     margin-bottom: 8px;
-    height: 24px;           /* Increased height to fit larger dots */
+    height: 24px;
+    /* Increased height to fit larger dots */
     background: transparent !important;
     box-shadow: none !important;
     border: none !important;
@@ -294,8 +373,10 @@
 
 /* Larger dots with subtle glow */
 .typing-joule-container.clean .typing-dot {
-    width: 16px;            /* increased from 10px */
-    height: 16px;           /* increased from 10px */
+    width: 16px;
+    /* increased from 10px */
+    height: 16px;
+    /* increased from 10px */
     border-radius: 50%;
     background: linear-gradient(135deg, #0a6ed1, #0854a0);
     animation: jouleTypingFade 1.4s infinite ease-in-out;
@@ -304,16 +385,28 @@
 }
 
 /* Adjust timing delays for smoother rhythm */
-.typing-joule-container.clean .typing-dot:nth-child(1) { animation-delay: 0s; }
-.typing-joule-container.clean .typing-dot:nth-child(2) { animation-delay: 0.4s; }
-.typing-joule-container.clean .typing-dot:nth-child(3) { animation-delay: 0.65s; }
+.typing-joule-container.clean .typing-dot:nth-child(1) {
+    animation-delay: 0s;
+}
+
+.typing-joule-container.clean .typing-dot:nth-child(2) {
+    animation-delay: 0.4s;
+}
+
+.typing-joule-container.clean .typing-dot:nth-child(3) {
+    animation-delay: 0.65s;
+}
 
 /* Smooth fade & pulse animation */
 @keyframes jouleTypingFade {
-    0%, 80%, 100% {
+
+    0%,
+    80%,
+    100% {
         opacity: 0.3;
         transform: scale(0.8);
     }
+
     40% {
         opacity: 1;
         transform: scale(1.25);
@@ -329,14 +422,29 @@
 }
 
 @keyframes fadeOut {
-    0% { opacity: 1; transform: scale(1); }
-    100% { opacity: 0; transform: scale(0.9); }
+    0% {
+        opacity: 1;
+        transform: scale(1);
+    }
+
+    100% {
+        opacity: 0;
+        transform: scale(0.9);
+    }
 }
+
 .chatBotBubble {
     animation: fadeInBot 0.3s ease;
 }
 
 @keyframes fadeInBot {
-    from { opacity: 0; transform: translateY(4px); }
-    to { opacity: 1; transform: translateY(0); }
+    from {
+        opacity: 0;
+        transform: translateY(4px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
