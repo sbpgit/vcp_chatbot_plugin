@@ -448,3 +448,68 @@
         transform: translateY(0);
     }
 }
+
+/* ===========================================================
+   🟦 IRCTC-style Floating Chat Button
+   =========================================================== */
+.irctcChatButton {
+    width: 50px !important;
+    height: 50px !important;
+    border-radius: 50% !important;
+    background: linear-gradient(135deg, #0a6ed1, #0854a0) !important;
+    color: white !important;
+    box-shadow: 0 6px 20px rgba(10, 110, 209, 0.35) !important;
+    transition: all 0.25s ease-in-out !important;
+    border: none !important;
+    outline: none !important;
+}
+
+/* Hover glow + scale-up effect */
+.irctcChatButton:hover {
+    transform: scale(1.1);
+    box-shadow: 0 8px 25px rgba(10, 110, 209, 0.45) !important;
+}
+
+/* Active press effect */
+.irctcChatButton:active {
+    transform: scale(0.95);
+    box-shadow: 0 3px 10px rgba(10, 110, 209, 0.3) !important;
+}
+
+/* Icon refinement (center & bigger) */
+.irctcChatButton .sapMBtnInner {
+    background: transparent !important;
+    border: none !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+.irctcChatButton .sapUiIcon {
+    color: #ffffff !important;
+    font-size: 2rem !important;
+    line-height: 1 !important;
+}
+
+span.sapMBtnInner.sapMBtnEmphasized .sapUiIcon, span.sapMBtnInner.sapMBtnEmphasized sapMBtnIcon {
+    padding-right: 11px;
+    padding-bottom: 7px;
+}
+
+.irctcChatButton .sapMBtnInner:after,
+.irctcChatButton:focus,
+.irctcChatButton .sapMBtnFocusDiv {
+    outline: none !important;
+    box-shadow: none !important;
+    border: none !important;
+}
+
+/* Also remove the blue focus frame when pressed */
+.irctcChatButton:focus-visible {
+    outline: none !important;
+}
+
+/* Prevent ripple or focus highlight from rendering */
+.irctcChatButton .sapMFocusable {
+    box-shadow: none !important;
+}

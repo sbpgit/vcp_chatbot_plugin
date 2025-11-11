@@ -89,7 +89,7 @@ sap.ui.define([
                         oPanel.classList.add("open");
                     }
                 }
-            });
+            }).addStyleClass("irctcChatButton");
             oChatButton.placeAt(oDiv);
         },
 
