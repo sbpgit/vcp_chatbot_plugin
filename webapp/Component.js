@@ -31,6 +31,8 @@ sap.ui.define([
             this.setModel(oImageModel, "imageModel");
 
             this.getUser();
+            //For browser close/session close
+             this._registerSessionEndHandlers();
 
             setTimeout(() => sap.ui.core.BusyIndicator.hide(), 1200);
         },
@@ -42,6 +44,41 @@ sap.ui.define([
                 vUser = email || "";
             }
             return vUser;
+        },
+
+        _registerSessionEndHandlers: function () {
+            try {
+                const userId = this.getUser()?.toLowerCase() || "unknown";
+
+                // 1️⃣ When browser/tab closes
+                window.addEventListener("beforeunload", function () {
+                    navigator.sendBeacon(
+                       "https://vcp_assistant_api.cfapps.us10-001.hana.ondemand.com/destroy",
+                        JSON.stringify({ userid: userId })
+                    );
+                });
+
+                // 2️⃣ When Launchpad logs out or session expires
+                if (sap.ushell && sap.ushell.Container) {
+                    sap.ushell.Container.attachLogoutEvent(function () {
+                        try {
+                            $.ajax({
+                                url: "https://vcp_assistant_api.cfapps.us10-001.hana.ondemand.com/destroy ",
+                                method: "POST",
+                                contentType: "application/json",
+                                data: JSON.stringify({ userid: userId }),
+                                headers: { Authorization: that.token },
+                                async: false // ensures call completes before unload
+                            });
+                        } catch (e) {
+                            console.warn("Session cleanup failed:", e);
+                        }
+                    });
+                }
+
+            } catch (err) {
+                console.warn("Session end handler registration failed:", err);
+            }
         },
 
         _setupNavigationListener: function () {
