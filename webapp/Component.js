@@ -32,7 +32,7 @@ sap.ui.define([
 
             this.getUser();
             //For browser close/session close
-             this._registerSessionEndHandlers();
+            this._registerSessionEndHandlers();
 
             setTimeout(() => sap.ui.core.BusyIndicator.hide(), 1200);
         },
@@ -53,7 +53,7 @@ sap.ui.define([
                 // 1️⃣ When browser/tab closes
                 window.addEventListener("beforeunload", function () {
                     navigator.sendBeacon(
-                       "https://vcp_assistant_api.cfapps.us10-001.hana.ondemand.com/destroy",
+                        "https://vcp_assistant_api.cfapps.us10-001.hana.ondemand.com/destroy",
                         JSON.stringify({ userid: userId })
                     );
                 });
@@ -356,8 +356,21 @@ sap.ui.define([
                 }
             }
 
-            function sendMessage(sMsg) {
+            async function sendMessage(sMsg) {
                 if (!sMsg) return;
+                that.oJobModel = that.getModel("jobs"); 
+                await that.oJobModel.callFunction("/getAuthorization", 
+                    { 
+                        method: "GET", 
+                        success: function (oData) 
+                        { sap.ui.core.BusyIndicator.hide(); 
+                            var bearerToken = oData.getAuthorization; 
+                            that.token = bearerToken; 
+                        }, 
+                        error: function (oData, error) 
+                        { MessageToast.show("error"); 
+
+                        } });
                 const oVBox = sap.ui.getCore().byId("chatMessages");
                 oVBox.addItem(new Text({ text: sMsg }).addStyleClass("chatUserBubble"));
                 sap.ui.getCore().applyChanges();
@@ -381,10 +394,10 @@ sap.ui.define([
                 oVBox.addItem(oTyping);
                 scrollDown();
 
-                setTimeout(function () {
+                setTimeout(async function () {
                     const userId = that.getUser().toLowerCase();
 
-                    $.ajax({
+                  await  $.ajax({
                         url: "https://vcp_assistant_api.cfapps.us10-001.hana.ondemand.com/ask",
                         method: "POST",
                         contentType: "application/json",

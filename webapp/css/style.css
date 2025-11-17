@@ -129,31 +129,40 @@
   font-size: 0.85rem;
 }
 
-.chatBotBubble th, .chatBotBubble td {
-  border: 1px solid #ddd;
-  padding: 6px 8px;
-  text-align: left;
+.chatBotBubble th,
+.chatBotBubble td {
+    border: 1px solid #ddd;
+    padding: 6px 8px;
+    text-align: left;
+    word-break: break-word !important;    /* 🔥 Prevent long IDs from breaking UI */
+    white-space: normal !important;
 }
 
 .chatBotBubble th {
-  background-color: #f0f8ff;
-  font-weight: 600;
+    background-color: #f0f8ff;
+    font-weight: 600;
 }
 
 .chatBotBubble tr:nth-child(even) {
-  background-color: #fafafa;
+    background-color: #fafafa;
 }
 
 .chatBotBubble {
   max-width: 95% !important;
-  overflow-x: auto !important;    /* ✅ allows horizontal scroll */
-  display: block !important;      /* ✅ ensures the scroll container works */
+    overflow-x: auto !important;      /* 🔥 Enables horizontal scroll */
+    display: block !important;        /* required for scroll */
+    white-space: normal !important;   /* allow wrapping */
 }
 
 /* Optional: make wide tables activate scroll */
 .chatBotBubble table {
-  min-width: 500px;               /* ✅ ensures scroll triggers on smaller screens */
-  table-layout: auto;
+ border-collapse: collapse;
+    width: 100%;
+    min-width: 600px !important;      /* 🔥 Force scroll on small screens */
+    table-layout: fixed !important;   /* 🔥 Prevent table from expanding infinitely */
+    margin-top: 6px;
+    border: 1px solid #ddd;
+    font-size: 0.85rem;
 }
 
 /* ===========================================================
