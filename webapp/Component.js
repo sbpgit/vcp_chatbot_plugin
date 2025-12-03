@@ -30,7 +30,7 @@ sap.ui.define([
             const oImageModel = new JSONModel({ path: oRootPath });
             this.setModel(oImageModel, "imageModel");
 
-            this.getUser();
+            that.userId = this.getUser()?.toLowerCase() || "unknown";;
             //For browser close/session close
             this._registerSessionEndHandlers();
 
@@ -48,13 +48,13 @@ sap.ui.define([
 
         _registerSessionEndHandlers: function () {
             try {
-                const userId = this.getUser()?.toLowerCase() || "unknown";
+                that.userId = this.getUser()?.toLowerCase() || "unknown";
 
                 // 1️⃣ When browser/tab closes
                 window.addEventListener("beforeunload", function () {
                     navigator.sendBeacon(
                         "https://vcp_assistant_api.cfapps.us10-001.hana.ondemand.com/destroy",
-                        JSON.stringify({ userid: userId })
+                        JSON.stringify({ userid: that.userId })
                     );
                 });
 
@@ -62,11 +62,12 @@ sap.ui.define([
                 if (sap.ushell && sap.ushell.Container) {
                     sap.ushell.Container.attachLogoutEvent(function () {
                         try {
+                            that.userId = this.getUser()?.toLowerCase() || "unknown";
                             $.ajax({
                                 url: "https://vcp_assistant_api.cfapps.us10-001.hana.ondemand.com/destroy ",
                                 method: "POST",
                                 contentType: "application/json",
-                                data: JSON.stringify({ userid: userId }),
+                                data: JSON.stringify({ userid: that.userId }),
                                 headers: { Authorization: that.token },
                                 async: false // ensures call completes before unload
                             });
@@ -79,6 +80,29 @@ sap.ui.define([
             } catch (err) {
                 console.warn("Session end handler registration failed:", err);
             }
+        },
+        getNameFromEmail: function (email) {
+            if (!email || typeof email !== "string") return "";
+
+            // Take text before @
+            let name = email.split("@")[0];
+
+            // Remove digits
+            name = name.replace(/[0-9]/g, "");
+
+            // Replace separators (., _, -, etc.) with spaces
+            name = name.replace(/[\.\_\-]+/g, " ");
+
+            // Trim extra spaces
+            name = name.replace(/\s+/g, " ").trim();
+
+            // Capitalize each word
+            name = name
+                .split(" ")
+                .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                .join(" ");
+
+            return name;
         },
 
         _setupNavigationListener: function () {
@@ -226,7 +250,7 @@ sap.ui.define([
             });
             scrollWrapper.id = "chat-scroll-wrapper";
             body.appendChild(scrollWrapper);
-            const username = this.getUser().split("@")[0];
+            const username = this.getNameFromEmail(this.getUser().toLowerCase());
             const oVBox = new VBox("chatMessages", {
                 width: "100%",
                 items: [
@@ -358,19 +382,20 @@ sap.ui.define([
 
             async function sendMessage(sMsg) {
                 if (!sMsg) return;
-                that.oJobModel = that.getModel("jobs"); 
-                await that.oJobModel.callFunction("/getAuthorization", 
-                    { 
-                        method: "GET", 
-                        success: function (oData) 
-                        { sap.ui.core.BusyIndicator.hide(); 
-                            var bearerToken = oData.getAuthorization; 
-                            that.token = bearerToken; 
-                        }, 
-                        error: function (oData, error) 
-                        { MessageToast.show("error"); 
+                that.oJobModel = that.getModel("jobs");
+                await that.oJobModel.callFunction("/getAuthorization",
+                    {
+                        method: "GET",
+                        success: function (oData) {
+                            sap.ui.core.BusyIndicator.hide();
+                            var bearerToken = oData.getAuthorization;
+                            that.token = bearerToken;
+                        },
+                        error: function (oData, error) {
+                            MessageToast.show("error");
 
-                        } });
+                        }
+                    });
                 const oVBox = sap.ui.getCore().byId("chatMessages");
                 oVBox.addItem(new Text({ text: sMsg }).addStyleClass("chatUserBubble"));
                 sap.ui.getCore().applyChanges();
@@ -397,7 +422,7 @@ sap.ui.define([
                 setTimeout(async function () {
                     const userId = that.getUser().toLowerCase();
 
-                  await  $.ajax({
+                    await $.ajax({
                         url: "https://vcp_assistant_api.cfapps.us10-001.hana.ondemand.com/ask",
                         method: "POST",
                         contentType: "application/json",
@@ -489,7 +514,7 @@ sap.ui.define([
             const oVBox = sap.ui.getCore().byId("chatMessages");
             if (oVBox) {
                 oVBox.destroyItems();
-                const username = this.getUser().split("@")[0];
+                const username = this.getNameFromEmail(this.getUser().toLowerCase());
                 oVBox.addItem(new Text({ text: "Hello " + username + ". How can I help you today?" })
                     .addStyleClass("chatBotBubble"));
             }
