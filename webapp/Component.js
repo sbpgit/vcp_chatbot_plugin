@@ -53,7 +53,7 @@ sap.ui.define([
                 // 1️⃣ When browser/tab closes
                 window.addEventListener("beforeunload", function () {
                     navigator.sendBeacon(
-                        "https://vcp_assistant_api.cfapps.us10-001.hana.ondemand.com/destroy",
+                        "https://vcp_assistant_api_devtest.cfapps.us10-001.hana.ondemand.com/destroy",
                         JSON.stringify({ userid: that.userId })
                     );
                 });
@@ -64,7 +64,7 @@ sap.ui.define([
                         try {
                             that.userId = this.getUser()?.toLowerCase() || "unknown";
                             $.ajax({
-                                url: "https://vcp_assistant_api.cfapps.us10-001.hana.ondemand.com/destroy ",
+                                url: "https://vcp_assistant_api_devtest.cfapps.us10-001.hana.ondemand.com/destroy ",
                                 method: "POST",
                                 contentType: "application/json",
                                 data: JSON.stringify({ userid: that.userId }),
@@ -423,7 +423,7 @@ sap.ui.define([
                     const userId = that.getUser().toLowerCase();
 
                     await $.ajax({
-                        url: "https://vcp_assistant_api.cfapps.us10-001.hana.ondemand.com/ask",
+                        url: "https://vcp_assistant_api_devtest.cfapps.us10-001.hana.ondemand.com/ask",
                         method: "POST",
                         contentType: "application/json",
                         data: JSON.stringify({ query: sMsg, userid: userId }),
