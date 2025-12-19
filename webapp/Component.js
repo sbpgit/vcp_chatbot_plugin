@@ -222,6 +222,29 @@ sap.ui.define([
             });
             clearIcon.addStyleClass("chatHeaderIcon");
 
+            // 🖥️ Fullscreen icon
+            const fullscreenIcon = new Icon({
+                src: "sap-icon://full-screen",
+                size: "1.2rem",
+                color: "white",
+                tooltip: "Full Screen",
+                press: () => {
+                    panel.classList.toggle("fullscreen");
+
+                    const isFs = panel.classList.contains("fullscreen");
+                    fullscreenIcon.setSrc(
+                        isFs ? "sap-icon://exit-full-screen" : "sap-icon://full-screen"
+                    );
+                    if (isFs) {
+                        document.getElementById("chat-floating-btn").style.display = "none";
+                    } else {
+                        document.getElementById("chat-floating-btn").style.display = "flex";
+                    }
+                }
+            });
+            fullscreenIcon.addStyleClass("chatHeaderIcon");
+            fullscreenIcon.placeAt(rightIcons);
+
             // 🧩 Swap order — delete first, close second
             clearIcon.placeAt(rightIcons);
             closeIcon.placeAt(rightIcons);
