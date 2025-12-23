@@ -25,7 +25,7 @@ sap.ui.define([
             this._createChatPanel();
             this._addStyles();
             this._setupNavigationListener();
-
+            this._getURL();
             const oRootPath = jQuery.sap.getModulePath("chat.newchatbot");
             const oImageModel = new JSONModel({ path: oRootPath });
             this.setModel(oImageModel, "imageModel");
@@ -36,7 +36,24 @@ sap.ui.define([
 
             setTimeout(() => sap.ui.core.BusyIndicator.hide(), 1200);
         },
+        _getURL: async function(){
+            that.oModel = that.getModel("oModel");
+            await that.oModel.callFunction("/getChatbotUrl",
+                    {
+                        method: "GET",
+                        success: function (oData) {
+                            var url = oData.getChatbotUrl;
+                            if(url === undefined){
+                                return;
+                            }
+                            that.URL = url;
+                        },
+                        error: function (oData, error) {
+                            MessageToast.show("error");
 
+                        }
+                    });
+        },
         getUser: function () {
             let vUser = "";
             if (sap.ushell && sap.ushell.Container) {
@@ -63,8 +80,10 @@ sap.ui.define([
                     sap.ushell.Container.attachLogoutEvent(function () {
                         try {
                             that.userId = this.getUser()?.toLowerCase() || "unknown";
+                            var urlFinal = that.URL+'/destroy';
                             $.ajax({
-                                url: "https://vcp_assistant_api_devtest.cfapps.us10-001.hana.ondemand.com/destroy ",
+                                // url: "https://vcp_assistant_api_devtest.cfapps.us10-001.hana.ondemand.com/destroy ",
+                                url: urlFinal,
                                 method: "POST",
                                 contentType: "application/json",
                                 data: JSON.stringify({ userid: that.userId }),
@@ -444,9 +463,9 @@ sap.ui.define([
 
                 setTimeout(async function () {
                     const userId = that.getUser().toLowerCase();
-
+                    var urlFinal = that.URL+'/ask';
                     await $.ajax({
-                        url: "https://vcp_assistant_api_devtest.cfapps.us10-001.hana.ondemand.com/ask",
+                        url: urlFinal,
                         method: "POST",
                         contentType: "application/json",
                         data: JSON.stringify({ query: sMsg, userid: userId }),
