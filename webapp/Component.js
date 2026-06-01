@@ -19,6 +19,8 @@ sap.ui.define([
             sap.ui.core.BusyIndicator.show(0);
             that = this;
             that.token = "";
+            that.currentSessionId = Date.now().toString();
+            that.currentMessages = [];
 
             UIComponent.prototype.init.apply(this, arguments);
             this._createFloatingButton();
@@ -137,7 +139,11 @@ sap.ui.define([
                 );
 
                 if (oChatBtnDiv) oChatBtnDiv.style.display = visible ? "flex" : "none";
-                if (oChatPanel) oChatPanel.style.display = visible ? "flex" : "none";
+                if (oChatPanel && !visible) {
+                    oChatPanel.classList.remove("open");
+                    oChatPanel.classList.add("closed");
+                    oChatPanel.style.display = "none";
+                }
             };
 
             window.addEventListener("hashchange", handleNav);
@@ -164,9 +170,11 @@ sap.ui.define([
                     if (oPanel.classList.contains("open")) {
                         oPanel.classList.remove("open");
                         oPanel.classList.add("closed");
+                        oPanel.style.display = "none";
                     } else {
                         oPanel.classList.remove("closed");
                         oPanel.classList.add("open");
+                        oPanel.style.display = "flex";
                     }
                 }
             }).addStyleClass("irctcChatButton");
@@ -187,7 +195,7 @@ sap.ui.define([
                 border: "1px solid #ddd",
                 borderRadius: "12px",
                 boxShadow: "0 4px 10px rgba(0,0,0,0.2)",
-                display: "flex",
+                display: "none",
                 flexDirection: "column",
                 overflow: "hidden",
                 zIndex: "12000"
@@ -227,6 +235,7 @@ sap.ui.define([
                 press: () => {
                     panel.classList.remove("open");
                     panel.classList.add("closed");
+                    panel.style.display = "none";
                 }
             });
             closeIcon.addStyleClass("chatHeaderIcon");
@@ -262,6 +271,23 @@ sap.ui.define([
                 }
             });
             fullscreenIcon.addStyleClass("chatHeaderIcon");
+
+            const historyIcon = new Icon({
+                src: "sap-icon://history",
+                size: "1.2rem",
+                color: "white",
+                tooltip: "Chat History",
+                press: function () {
+                    const sidebar = document.getElementById("chatbot-history-sidebar");
+                    if (!sidebar) return;
+                    const isOpen = sidebar.style.width !== "0" && sidebar.style.width !== "0px" && sidebar.style.width !== "";
+                    sidebar.style.width = isOpen ? "0" : "180px";
+                    if (!isOpen) that._renderHistoryList();
+                }
+            });
+            historyIcon.addStyleClass("chatHeaderIcon");
+
+            historyIcon.placeAt(rightIcons);
             fullscreenIcon.placeAt(rightIcons);
 
             // 🧩 Swap order — delete first, close second
@@ -270,6 +296,55 @@ sap.ui.define([
 
             header.appendChild(rightIcons);
             panel.appendChild(header);
+
+            // === Content Wrapper (sidebar + chat area) ===
+            const contentWrapper = document.createElement("div");
+            Object.assign(contentWrapper.style, {
+                flex: "1",
+                display: "flex",
+                flexDirection: "row",
+                overflow: "hidden"
+            });
+            panel.appendChild(contentWrapper);
+
+            // === History Sidebar ===
+            const historySidebar = document.createElement("div");
+            historySidebar.id = "chatbot-history-sidebar";
+            Object.assign(historySidebar.style, {
+                width: "0",
+                overflow: "hidden",
+                background: "#f5f7fa",
+                borderRight: "1px solid #e0e0e0",
+                display: "flex",
+                flexDirection: "column",
+                flexShrink: "0",
+                transition: "width 0.25s ease"
+            });
+            contentWrapper.appendChild(historySidebar);
+
+            const newChatBtn = document.createElement("button");
+            newChatBtn.textContent = "+ New Chat";
+            Object.assign(newChatBtn.style, {
+                margin: "10px 8px", padding: "8px 10px", background: "transparent",
+                border: "1px solid #0a6ed1", borderRadius: "6px", color: "#0a6ed1",
+                cursor: "pointer", fontSize: "0.78rem", textAlign: "left",
+                flexShrink: "0", whiteSpace: "nowrap", fontWeight: "500"
+            });
+            newChatBtn.addEventListener("click", function () { that._startNewChat(); });
+            historySidebar.appendChild(newChatBtn);
+
+            const recentLabel = document.createElement("div");
+            recentLabel.textContent = "Recent";
+            Object.assign(recentLabel.style, {
+                color: "#888", fontSize: "0.68rem", padding: "8px 10px 4px",
+                textTransform: "uppercase", letterSpacing: "0.05em", flexShrink: "0"
+            });
+            historySidebar.appendChild(recentLabel);
+
+            const historyList = document.createElement("div");
+            historyList.id = "chatbot-history-list";
+            Object.assign(historyList.style, { flex: "1", overflowY: "auto", padding: "4px 6px" });
+            historySidebar.appendChild(historyList);
 
             // === Body ===
             const body = document.createElement("div");
@@ -280,7 +355,7 @@ sap.ui.define([
                 overflow: "hidden",
                 position: "relative"
             });
-            panel.appendChild(body);
+            contentWrapper.appendChild(body);
 
             const scrollWrapper = document.createElement("div");
             Object.assign(scrollWrapper.style, {
@@ -293,11 +368,12 @@ sap.ui.define([
             scrollWrapper.id = "chat-scroll-wrapper";
             body.appendChild(scrollWrapper);
             const username = this.getNameFromEmail(this.getUser().toLowerCase());
+            const greetingText = "Hello " + username + ". How can I help you today?";
+            that.currentMessages = [{ role: "bot-greeting", text: greetingText }];
             const oVBox = new VBox("chatMessages", {
                 width: "100%",
                 items: [
-                    new Text({ text: "Hello " + username + ". How can I help you today?" })
-                        .addStyleClass("chatBotBubble")
+                    new Text({ text: greetingText }).addStyleClass("chatBotBubble")
                 ]
             });
             oVBox.placeAt(scrollWrapper);
@@ -440,6 +516,7 @@ sap.ui.define([
                     });
                 const oVBox = sap.ui.getCore().byId("chatMessages");
                 oVBox.addItem(new Text({ text: sMsg }).addStyleClass("chatUserBubble"));
+                that.currentMessages.push({ role: "user", text: sMsg });
                 sap.ui.getCore().applyChanges();
                 scrollDown();
 
@@ -509,20 +586,31 @@ sap.ui.define([
                                 ]
                             }));
 
+                            if (data && data.response) {
+                                const rText = data.response.trim();
+                                const msgEntry = rText.includes("<table")
+                                    ? { role: "bot", html: rText }
+                                    : { role: "bot", text: rText.startsWith("An unexpected error") ? "Sorry, I ran into an internal error. Please try again later." : rText };
+                                if (data.table) msgEntry.table = data.table;
+                                that.currentMessages.push(msgEntry);
+                            }
+                            that._saveCurrentSession();
+
                             sap.ui.getCore().applyChanges();
                             scrollDown();
                         },
 
                         error: function (xhr) {
                             removeTyping();
+                            const errText = "🤖 " + (xhr.statusText || "Error contacting assistant");
                             oVBox.addItem(new HBox({
                                 items: [
                                     new Image({ src: "image/logo.png", width: "28px", height: "28px" }),
-                                    new Text({
-                                        text: "🤖 " + (xhr.statusText || "Error contacting assistant")
-                                    }).addStyleClass("chatBotBubble")
+                                    new Text({ text: errText }).addStyleClass("chatBotBubble")
                                 ]
                             }));
+                            that.currentMessages.push({ role: "bot", text: errText });
+                            that._saveCurrentSession();
                             sap.ui.getCore().applyChanges();
                             scrollDown();
                         }
@@ -553,18 +641,131 @@ sap.ui.define([
         },
 
         _clearChatMessages: function () {
+            this._saveCurrentSession();
             const oVBox = sap.ui.getCore().byId("chatMessages");
             if (oVBox) {
                 oVBox.destroyItems();
                 const username = this.getNameFromEmail(this.getUser().toLowerCase());
-                oVBox.addItem(new Text({ text: "Hello " + username + ". How can I help you today?" })
-                    .addStyleClass("chatBotBubble"));
+                const greetingText = "Hello " + username + ". How can I help you today?";
+                oVBox.addItem(new Text({ text: greetingText }).addStyleClass("chatBotBubble"));
+                that.currentSessionId = Date.now().toString();
+                that.currentMessages = [{ role: "bot-greeting", text: greetingText }];
             }
             // 🧹 Reset scroll and hide "scroll down" button
             const scrollDiv = document.getElementById("chat-scroll-wrapper");
             const scrollBtn = document.getElementById("scrollToBottomBtn");
             if (scrollDiv) scrollDiv.scrollTop = 0;
             if (scrollBtn) scrollBtn.style.display = "none";
+        },
+
+        _getStorageKey: function () {
+            return "vcp_chatbot_sessions_" + (that.userId || "unknown");
+        },
+
+        _saveCurrentSession: function () {
+            if (!that.currentMessages || !that.currentMessages.some(function (m) { return m.role === "user"; })) return;
+            const key = this._getStorageKey();
+            let sessions = [];
+            try { sessions = JSON.parse(localStorage.getItem(key) || "[]"); } catch (e) { sessions = []; }
+            const firstUser = that.currentMessages.find(function (m) { return m.role === "user"; });
+            const raw = firstUser ? firstUser.text : "Chat";
+            const title = raw.length > 40 ? raw.slice(0, 37) + "..." : raw;
+            const idx = sessions.findIndex(function (s) { return s.id === that.currentSessionId; });
+            const session = { id: that.currentSessionId, title: title, messages: that.currentMessages.slice(), updatedAt: Date.now() };
+            if (idx >= 0) sessions[idx] = session;
+            else sessions.unshift(session);
+            try { localStorage.setItem(key, JSON.stringify(sessions.slice(0, 50))); } catch (e) {}
+            this._renderHistoryList();
+        },
+
+        _loadSession: function (sessionId) {
+            this._saveCurrentSession();
+            const key = this._getStorageKey();
+            let sessions = [];
+            try { sessions = JSON.parse(localStorage.getItem(key) || "[]"); } catch (e) {}
+            const session = sessions.find(function (s) { return s.id === sessionId; });
+            if (!session) return;
+            that.currentSessionId = sessionId;
+            that.currentMessages = session.messages.slice();
+            const oVBox = sap.ui.getCore().byId("chatMessages");
+            if (!oVBox) return;
+            oVBox.destroyItems();
+            session.messages.forEach(function (msg) {
+                if (msg.role === "bot-greeting") {
+                    oVBox.addItem(new Text({ text: msg.text }).addStyleClass("chatBotBubble"));
+                } else if (msg.role === "user") {
+                    oVBox.addItem(new Text({ text: msg.text }).addStyleClass("chatUserBubble"));
+                } else if (msg.role === "bot") {
+                    const oBotVBox = new VBox().addStyleClass("chatBotBubble");
+                    if (msg.html) oBotVBox.addItem(new sap.ui.core.HTML({ content: msg.html }));
+                    else if (msg.text) oBotVBox.addItem(new sap.m.FormattedText({ htmlText: msg.text }));
+                    if (msg.table) oBotVBox.addItem(new sap.ui.core.HTML({ content: msg.table }));
+                    oVBox.addItem(new HBox({
+                        items: [new Image({ src: "image/logo.png", width: "28px", height: "28px" }), oBotVBox]
+                    }));
+                }
+            });
+            sap.ui.getCore().applyChanges();
+            const scrollDiv = document.getElementById("chat-scroll-wrapper");
+            if (scrollDiv) scrollDiv.scrollTop = scrollDiv.scrollHeight;
+            this._renderHistoryList();
+        },
+
+        _startNewChat: function () {
+            this._saveCurrentSession();
+            that.currentSessionId = Date.now().toString();
+            const username = this.getNameFromEmail(this.getUser().toLowerCase());
+            const greetingText = "Hello " + username + ". How can I help you today?";
+            that.currentMessages = [{ role: "bot-greeting", text: greetingText }];
+            const oVBox = sap.ui.getCore().byId("chatMessages");
+            if (oVBox) {
+                oVBox.destroyItems();
+                oVBox.addItem(new Text({ text: greetingText }).addStyleClass("chatBotBubble"));
+                sap.ui.getCore().applyChanges();
+            }
+            const scrollDiv = document.getElementById("chat-scroll-wrapper");
+            const scrollBtn = document.getElementById("scrollToBottomBtn");
+            if (scrollDiv) scrollDiv.scrollTop = 0;
+            if (scrollBtn) scrollBtn.style.display = "none";
+            this._renderHistoryList();
+        },
+
+        _renderHistoryList: function () {
+            const listEl = document.getElementById("chatbot-history-list");
+            if (!listEl) return;
+            const key = this._getStorageKey();
+            let sessions = [];
+            try { sessions = JSON.parse(localStorage.getItem(key) || "[]"); } catch (e) {}
+            listEl.innerHTML = "";
+            const self = this;
+            if (sessions.length === 0) {
+                const empty = document.createElement("div");
+                empty.textContent = "No previous chats";
+                Object.assign(empty.style, { color: "#6b7280", fontSize: "0.75rem", padding: "16px 8px", textAlign: "center" });
+                listEl.appendChild(empty);
+                return;
+            }
+            sessions.forEach(function (session) {
+                const item = document.createElement("div");
+                item.textContent = session.title;
+                item.title = session.title;
+                const isActive = session.id === that.currentSessionId;
+                Object.assign(item.style, {
+                    padding: "8px 10px", borderRadius: "6px", cursor: "pointer",
+                    fontSize: "0.78rem", color: isActive ? "#0a6ed1" : "#444",
+                    background: isActive ? "rgba(10,110,209,0.10)" : "transparent",
+                    fontWeight: isActive ? "600" : "normal",
+                    margin: "1px 0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap"
+                });
+                item.addEventListener("mouseover", function () {
+                    if (session.id !== that.currentSessionId) this.style.background = "rgba(10,110,209,0.06)";
+                });
+                item.addEventListener("mouseout", function () {
+                    if (session.id !== that.currentSessionId) this.style.background = "transparent";
+                });
+                item.addEventListener("click", function () { self._loadSession(session.id); });
+                listEl.appendChild(item);
+            });
         },
 
         _addStyles: function () {
@@ -577,12 +778,14 @@ sap.ui.define([
                     background: #0a6ed1; color: white; padding: 8px 12px;
                     border-radius: 12px; margin: 4px; max-width: 70%;
                     align-self: flex-end; word-wrap: break-word;
+                    width: fit-content;
                 }
 
                 .chatBotBubble {
                     background: #f2f2f2; color: #333; padding: 8px 12px;
                     border-radius: 12px; margin: 4px; max-width: 90%;
                     align-self: flex-start; word-wrap: break-word;
+                    width: fit-content;
                 }
 
                 /* Joule-style input */
@@ -609,6 +812,11 @@ sap.ui.define([
 
                 .chatHeaderIcon { cursor: pointer; transition: transform 0.2s ease, opacity 0.2s ease; }
                 .chatHeaderIcon:hover { transform: scale(1.2); opacity: 0.9; }
+
+                #chatbot-history-sidebar button:hover { background: rgba(10,110,209,0.08) !important; }
+                #chatbot-history-list::-webkit-scrollbar { width: 3px; }
+                #chatbot-history-list::-webkit-scrollbar-track { background: transparent; }
+                #chatbot-history-list::-webkit-scrollbar-thumb { background: #c0ccd8; border-radius: 4px; }
             `;
             document.head.appendChild(style);
         }
