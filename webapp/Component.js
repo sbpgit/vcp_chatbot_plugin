@@ -23,38 +23,60 @@ sap.ui.define([
             that.currentMessages = [];
 
             UIComponent.prototype.init.apply(this, arguments);
+            const oRootPath = jQuery.sap.getModulePath("chat.newchatbot");
+            that.logoPath = oRootPath + "/image/logo.png";
+            const _preloadLogo = new window.Image();
+            _preloadLogo.src = that.logoPath;
             this._createFloatingButton();
             this._createChatPanel();
             this._addStyles();
             this._setupNavigationListener();
             this._getURL();
-            const oRootPath = jQuery.sap.getModulePath("chat.newchatbot");
+            this._getToken();
             const oImageModel = new JSONModel({ path: oRootPath });
             this.setModel(oImageModel, "imageModel");
 
-            that.userId = this.getUser()?.toLowerCase() || "unknown";;
+            that.userId = this.getUser()?.toLowerCase() || "unknown";
             //For browser close/session close
             this._registerSessionEndHandlers();
 
             setTimeout(() => sap.ui.core.BusyIndicator.hide(), 1200);
         },
-        _getURL: async function(){
+        _getURL: function () {
             that.oModel = that.getModel("oModel");
-            await that.oModel.callFunction("/getChatbotUrl",
-                    {
-                        method: "GET",
-                        success: function (oData) {
-                            var url = oData.getChatbotUrl;
-                            if(url === undefined){
-                                return;
-                            }
+            return new Promise(function (resolve) {
+                that.oModel.callFunction("/getChatbotUrl", {
+                    method: "GET",
+                    success: function (oData) {
+                        var url = oData.getChatbotUrl;
+                        if (url !== undefined) {
                             that.URL = url;
-                        },
-                        error: function (oData, error) {
-                            MessageToast.show("error");
-
                         }
-                    });
+                        resolve();
+                    },
+                    error: function () {
+                        MessageToast.show("error");
+                        resolve();
+                    }
+                });
+            });
+        },
+        _getToken: function () {
+            var oJobModel = that.getModel("jobs");
+            if (!oJobModel) return Promise.resolve();
+            return new Promise(function (resolve) {
+                oJobModel.callFunction("/getAuthorization", {
+                    method: "GET",
+                    success: function (oData) {
+                        that.token = oData.getAuthorization;
+                        resolve();
+                    },
+                    error: function () {
+                        MessageToast.show("error");
+                        resolve();
+                    }
+                });
+            });
         },
         getUser: function () {
             let vUser = "";
@@ -71,17 +93,19 @@ sap.ui.define([
 
                 // 1️⃣ When browser/tab closes
                 window.addEventListener("beforeunload", function () {
-                    navigator.sendBeacon(
-                        "https://vcp_assistant_api_devtest.cfapps.us10-001.hana.ondemand.com/destroy",
-                        JSON.stringify({ userid: that.userId })
-                    );
+                    if (that.URL) {
+                        navigator.sendBeacon(
+                            that.URL + "/destroy",
+                            JSON.stringify({ userid: that.userId })
+                        );
+                    }
                 });
 
                 // 2️⃣ When Launchpad logs out or session expires
                 if (sap.ushell && sap.ushell.Container) {
                     sap.ushell.Container.attachLogoutEvent(function () {
                         try {
-                            that.userId = this.getUser()?.toLowerCase() || "unknown";
+                            that.userId = that.getUser()?.toLowerCase() || "unknown";
                             var urlFinal = that.URL+'/destroy';
                             $.ajax({
                                 // url: "https://vcp_assistant_api_devtest.cfapps.us10-001.hana.ondemand.com/destroy ",
@@ -225,6 +249,7 @@ sap.ui.define([
             rightIcons.style.display = "flex";
             rightIcons.style.alignItems = "center";
             rightIcons.style.gap = "10px";
+            rightIcons.style.flexShrink = "0";
 
             // ✖ Close icon
             const closeIcon = new Icon({
@@ -373,7 +398,12 @@ sap.ui.define([
             const oVBox = new VBox("chatMessages", {
                 width: "100%",
                 items: [
-                    new Text({ text: greetingText }).addStyleClass("chatBotBubble")
+                    new HBox({
+                        items: [
+                            new Image({ src: that.logoPath, width: "28px", height: "28px" }),
+                            new Text({ text: greetingText }).addStyleClass("chatBotBubble")
+                        ]
+                    }).addStyleClass("chatBotMessageRow")
                 ]
             });
             oVBox.placeAt(scrollWrapper);
@@ -498,22 +528,8 @@ sap.ui.define([
                 }
             }
 
-            async function sendMessage(sMsg) {
+            function sendMessage(sMsg) {
                 if (!sMsg) return;
-                that.oJobModel = that.getModel("jobs");
-                await that.oJobModel.callFunction("/getAuthorization",
-                    {
-                        method: "GET",
-                        success: function (oData) {
-                            sap.ui.core.BusyIndicator.hide();
-                            var bearerToken = oData.getAuthorization;
-                            that.token = bearerToken;
-                        },
-                        error: function (oData, error) {
-                            MessageToast.show("error");
-
-                        }
-                    });
                 const oVBox = sap.ui.getCore().byId("chatMessages");
                 oVBox.addItem(new Text({ text: sMsg }).addStyleClass("chatUserBubble"));
                 that.currentMessages.push({ role: "user", text: sMsg });
@@ -540,81 +556,89 @@ sap.ui.define([
 
                 setTimeout(async function () {
                     const userId = that.getUser().toLowerCase();
-                    var urlFinal = that.URL+'/ask';
-                    await $.ajax({
-                        url: urlFinal,
-                        method: "POST",
-                        contentType: "application/json",
-                        data: JSON.stringify({ query: sMsg, userid: userId }),
-                        headers: { Authorization: that.token },
+                    const urlFinal = that.URL + "/ask";
 
-                        success: function (data) {
-                            removeTyping();
+                    function doAjax() {
+                        return $.ajax({
+                            url: urlFinal,
+                            method: "POST",
+                            contentType: "application/json",
+                            data: JSON.stringify({ query: sMsg, userid: userId }),
+                            headers: { Authorization: that.token }
+                        });
+                    }
 
-                            const oBotVBox = new VBox().addStyleClass("chatBotBubble");
+                    function showError(xhr) {
+                        removeTyping();
+                        const errText = "🤖 " + (xhr.statusText || "Error contacting assistant");
+                        oVBox.addItem(new HBox({
+                            items: [
+                                new Image({ src: that.logoPath, width: "28px", height: "28px" }),
+                                new Text({ text: errText }).addStyleClass("chatBotBubble")
+                            ]
+                        }).addStyleClass("chatBotMessageRow"));
+                        that.currentMessages.push({ role: "bot", text: errText });
+                        that._saveCurrentSession();
+                        sap.ui.getCore().applyChanges();
+                        scrollDown();
+                    }
 
-                            if (data && data.response) {
-                                const responseText = data.response.trim();
-
-                                // 🔹 If response contains HTML table, render full HTML
-                                if (responseText.includes("<table")) {
-                                    oBotVBox.addItem(new sap.ui.core.HTML({
-                                        content: responseText
-                                    }));
-                                } else {
-                                    // 🔹 Otherwise use FormattedText for safe rendering
-                                    oBotVBox.addItem(new sap.m.FormattedText({
-                                        htmlText: responseText.startsWith("An unexpected error")
-                                            ? "Sorry, I ran into an internal error. Please try again later."
-                                            : responseText
-                                    }));
-                                }
+                    var data;
+                    try {
+                        data = await doAjax();
+                    } catch (xhr) {
+                        if (xhr.status === 401) {
+                            await that._getToken();
+                            try {
+                                data = await doAjax();
+                            } catch (xhr2) {
+                                showError(xhr2);
+                                return;
                             }
-
-                            // 🔹 Handle separate 'table' property (if API returns it separately)
-                            if (data.table) {
-                                oBotVBox.addItem(new sap.ui.core.HTML({
-                                    content: data.table
-                                }));
-                            }
-
-                            // 🔹 Add bot message with logo
-                            oVBox.addItem(new HBox({
-                                items: [
-                                    new Image({ src: "image/logo.png", width: "28px", height: "28px" }),
-                                    oBotVBox
-                                ]
-                            }));
-
-                            if (data && data.response) {
-                                const rText = data.response.trim();
-                                const msgEntry = rText.includes("<table")
-                                    ? { role: "bot", html: rText }
-                                    : { role: "bot", text: rText.startsWith("An unexpected error") ? "Sorry, I ran into an internal error. Please try again later." : rText };
-                                if (data.table) msgEntry.table = data.table;
-                                that.currentMessages.push(msgEntry);
-                            }
-                            that._saveCurrentSession();
-
-                            sap.ui.getCore().applyChanges();
-                            scrollDown();
-                        },
-
-                        error: function (xhr) {
-                            removeTyping();
-                            const errText = "🤖 " + (xhr.statusText || "Error contacting assistant");
-                            oVBox.addItem(new HBox({
-                                items: [
-                                    new Image({ src: "image/logo.png", width: "28px", height: "28px" }),
-                                    new Text({ text: errText }).addStyleClass("chatBotBubble")
-                                ]
-                            }));
-                            that.currentMessages.push({ role: "bot", text: errText });
-                            that._saveCurrentSession();
-                            sap.ui.getCore().applyChanges();
-                            scrollDown();
+                        } else {
+                            showError(xhr);
+                            return;
                         }
-                    });
+                    }
+
+                    removeTyping();
+                    const oBotVBox = new VBox().addStyleClass("chatBotBubble");
+
+                    if (data && data.response) {
+                        const responseText = data.response.trim();
+                        if (responseText.includes("<table")) {
+                            oBotVBox.addItem(new sap.ui.core.HTML({ content: responseText }));
+                        } else {
+                            oBotVBox.addItem(new sap.m.FormattedText({
+                                htmlText: responseText.startsWith("An unexpected error")
+                                    ? "Sorry, I ran into an internal error. Please try again later."
+                                    : responseText
+                            }));
+                        }
+                    }
+
+                    if (data.table) {
+                        oBotVBox.addItem(new sap.ui.core.HTML({ content: data.table }));
+                    }
+
+                    oVBox.addItem(new HBox({
+                        items: [
+                            new Image({ src: that.logoPath, width: "28px", height: "28px" }),
+                            oBotVBox
+                        ]
+                    }).addStyleClass("chatBotMessageRow"));
+
+                    if (data && data.response) {
+                        const rText = data.response.trim();
+                        const msgEntry = rText.includes("<table")
+                            ? { role: "bot", html: rText }
+                            : { role: "bot", text: rText.startsWith("An unexpected error") ? "Sorry, I ran into an internal error. Please try again later." : rText };
+                        if (data.table) msgEntry.table = data.table;
+                        that.currentMessages.push(msgEntry);
+                    }
+                    that._saveCurrentSession();
+                    sap.ui.getCore().applyChanges();
+                    scrollDown();
                 }, 800);
             }
 
@@ -647,7 +671,12 @@ sap.ui.define([
                 oVBox.destroyItems();
                 const username = this.getNameFromEmail(this.getUser().toLowerCase());
                 const greetingText = "Hello " + username + ". How can I help you today?";
-                oVBox.addItem(new Text({ text: greetingText }).addStyleClass("chatBotBubble"));
+                oVBox.addItem(new HBox({
+                    items: [
+                        new Image({ src: that.logoPath, width: "28px", height: "28px" }),
+                        new Text({ text: greetingText }).addStyleClass("chatBotBubble")
+                    ]
+                }).addStyleClass("chatBotMessageRow"));
                 that.currentSessionId = Date.now().toString();
                 that.currentMessages = [{ role: "bot-greeting", text: greetingText }];
             }
@@ -692,7 +721,12 @@ sap.ui.define([
             oVBox.destroyItems();
             session.messages.forEach(function (msg) {
                 if (msg.role === "bot-greeting") {
-                    oVBox.addItem(new Text({ text: msg.text }).addStyleClass("chatBotBubble"));
+                    oVBox.addItem(new HBox({
+                        items: [
+                            new Image({ src: that.logoPath, width: "28px", height: "28px" }),
+                            new Text({ text: msg.text }).addStyleClass("chatBotBubble")
+                        ]
+                    }).addStyleClass("chatBotMessageRow"));
                 } else if (msg.role === "user") {
                     oVBox.addItem(new Text({ text: msg.text }).addStyleClass("chatUserBubble"));
                 } else if (msg.role === "bot") {
@@ -701,8 +735,8 @@ sap.ui.define([
                     else if (msg.text) oBotVBox.addItem(new sap.m.FormattedText({ htmlText: msg.text }));
                     if (msg.table) oBotVBox.addItem(new sap.ui.core.HTML({ content: msg.table }));
                     oVBox.addItem(new HBox({
-                        items: [new Image({ src: "image/logo.png", width: "28px", height: "28px" }), oBotVBox]
-                    }));
+                        items: [new Image({ src: that.logoPath, width: "28px", height: "28px" }), oBotVBox]
+                    }).addStyleClass("chatBotMessageRow"));
                 }
             });
             sap.ui.getCore().applyChanges();
@@ -720,7 +754,12 @@ sap.ui.define([
             const oVBox = sap.ui.getCore().byId("chatMessages");
             if (oVBox) {
                 oVBox.destroyItems();
-                oVBox.addItem(new Text({ text: greetingText }).addStyleClass("chatBotBubble"));
+                oVBox.addItem(new HBox({
+                    items: [
+                        new Image({ src: that.logoPath, width: "28px", height: "28px" }),
+                        new Text({ text: greetingText }).addStyleClass("chatBotBubble")
+                    ]
+                }).addStyleClass("chatBotMessageRow"));
                 sap.ui.getCore().applyChanges();
             }
             const scrollDiv = document.getElementById("chat-scroll-wrapper");
@@ -778,15 +817,17 @@ sap.ui.define([
                     background: #0a6ed1; color: white; padding: 8px 12px;
                     border-radius: 12px; margin: 4px; max-width: 70%;
                     align-self: flex-end; word-wrap: break-word;
-                    width: fit-content;
+                    width: fit-content; font-size: 0.78rem;
                 }
 
                 .chatBotBubble {
                     background: #f2f2f2; color: #333; padding: 8px 12px;
                     border-radius: 12px; margin: 4px; max-width: 90%;
                     align-self: flex-start; word-wrap: break-word;
-                    width: fit-content;
+                    width: fit-content; font-size: 0.78rem;
                 }
+
+                .chatBotBubble .sapMFT, .chatBotBubble .sapMFT * { font-size: 0.78rem !important; }
 
                 /* Joule-style input */
                 .jouleInputField .sapMTextAreaInner {
@@ -809,6 +850,8 @@ sap.ui.define([
                 .jouleSendButton:hover {
                     background: #0a6ed1 !important; transform: scale(1.1);
                 }
+
+                .chatBotMessageRow { gap: 8px; align-items: flex-start !important; }
 
                 .chatHeaderIcon { cursor: pointer; transition: transform 0.2s ease, opacity 0.2s ease; }
                 .chatHeaderIcon:hover { transform: scale(1.2); opacity: 0.9; }
