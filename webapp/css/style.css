@@ -525,13 +525,14 @@ span.sapMBtnInner.sapMBtnEmphasized .sapUiIcon, span.sapMBtnInner.sapMBtnEmphasi
 
 /* === Fullscreen Chat === */
 #chatbot-panel.fullscreen {
-    top: 0 !important;
-    left: 0 !important;
-    right: 0 !important;
-    bottom: 0 !important;
-    width: 100vw !important;
-    height: 100vh !important;
-    border-radius: 0 !important;
+    top: 50% !important;
+    left: 50% !important;
+    right: auto !important;
+    bottom: auto !important;
+    transform: translate(-50%, -50%) !important;
+    width: 62.5vw !important;
+    height: 87.5vh !important;
+    border-radius: 12px !important;
     z-index: 20000 !important;
 }
 
@@ -541,5 +542,5 @@ span.sapMBtnInner.sapMBtnEmphasized .sapUiIcon, span.sapMBtnInner.sapMBtnEmphasi
 
 /* Optional smooth transition */
 #chatbot-panel {
-    transition: all 0.25s ease-in-out;
+    transition: width 0.25s ease-in-out, height 0.25s ease-in-out, transform 0.25s ease-in-out;
 }

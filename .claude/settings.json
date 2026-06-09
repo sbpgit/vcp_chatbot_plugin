@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(grep -n '\"\\\\\\\\$filter\": filterStr\\\\|\"\\\\\\\\$filter\": filterParts' /home/user/projects/vcp_chatbot_plugin/webapp/Component.js)",
+      "Bash(grep -n '$top\\\\|urlParameters\\\\|capturedSel\\\\|capturedField\\\\|_onCascadeChange' /home/user/projects/vcp_chatbot_plugin/webapp/Component.js)",
+      "Bash(grep -n '\"\\\\$top\": \"5000\"\\\\|\"\\\\$filter\": capturedFilterStr' /home/user/projects/vcp_chatbot_plugin/webapp/Component.js)"
+    ]
+  }
+}

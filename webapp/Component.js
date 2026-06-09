@@ -258,9 +258,11 @@ sap.ui.define([
                 color: "white",
                 tooltip: "Close Chat",
                 press: () => {
-                    panel.classList.remove("open");
+                    panel.classList.remove("open", "fullscreen");
                     panel.classList.add("closed");
                     panel.style.display = "none";
+                    fullscreenIcon.setSrc("sap-icon://full-screen");
+                    document.getElementById("chat-floating-btn").style.display = "flex";
                 }
             });
             closeIcon.addStyleClass("chatHeaderIcon");
@@ -528,10 +530,582 @@ sap.ui.define([
                 }
             }
 
+            const INTENT_FILTERS = {
+                "OptionMixPlanning": {
+                    entitySet: "getTelescopicFinalPlanNew",
+                    cascade: [
+                        { key: "LOCATION_ID",     label: "Location ID",     type: "string" },
+                        { key: "PRODUCT_ID",      label: "Product ID",      type: "string" },
+                        { key: "CUSTOMER_GROUP",  label: "Customer Group",  type: "string" },
+                        { key: "CHAR_NAME",       label: "Char Name",       type: "string" },
+                        { key: "CHARVAL_NUM",     label: "Char Value",      type: "string" },
+                        { key: "TELESCOPIC_WEEK", label: "Telescopic Week", type: "string" }
+                    ],
+                    autoFill: [
+                        { key: "PERIODSTART", label: "Period Start Date" },
+                        { key: "PERIODEND",   label: "Period End Date" }
+                    ],
+                    optionalFilters: [
+                        { key: "VERSION",       label: "Version",       defaultVal: "__BASELINE" },
+                        { key: "SCENARIO",      label: "Scenario",      defaultVal: "_PLAN" },
+                        { key: "MODEL_VERSION", label: "Model Version", defaultVal: "Active" }
+                    ],
+                    derived: [
+                        { key: "OPT_PERCENT", label: "Opt Percent (%)" },
+                        { key: "OPT_QTY",     label: "Opt Quantity" }
+                    ],
+                    distributionFilter: {
+                        key: "DISTRIBUTION_METHOD",
+                        label: "Distribution Type",
+                        options: [
+                            { value: "EQUAL",   label: "Equal Distribution" },
+                            { value: "PRORATE", label: "Prorate Distribution" }
+                        ]
+                    }
+                }
+            };
+            window._intentFilterConfig = INTENT_FILTERS;
+
+            function toDateStr(val) {
+                if (!val) return "";
+                if (typeof val === "string") {
+                    var m = val.match(/Date\((\d+)\)/);
+                    if (m) return new Date(parseInt(m[1])).toISOString().slice(0, 10);
+                    return val.slice(0, 10);
+                }
+                return val instanceof Date ? val.toISOString().slice(0, 10) : String(val);
+            }
+
+            function showFilterForm(intentName, config) {
+                var oVBox = sap.ui.getCore().byId("chatMessages");
+                var formId = "filterForm_" + Date.now();
+
+                var cascadeHtml = config.cascade.map(function (f, i) {
+                    var dis = i === 0 ? "" : " disabled";
+                    var bg  = i === 0 ? "#fff" : "#f5f5f5";
+                    return '<div style="margin-bottom:8px;">'
+                        + '<label style="font-size:0.72rem;color:#555;display:block;margin-bottom:3px;">' + f.label + '</label>'
+                        + '<select name="' + f.key + '"' + dis
+                        + ' style="width:100%;padding:5px 8px;border:1px solid #ccc;border-radius:6px;font-size:0.78rem;background:' + bg + ';box-sizing:border-box;">'
+                        + '<option value="">-- Select --</option></select></div>';
+                }).join("");
+
+                var autoFillHtml = (config.autoFill || []).map(function (f) {
+                    return '<div style="margin-bottom:8px;">'
+                        + '<label style="font-size:0.72rem;color:#555;display:block;margin-bottom:3px;">' + f.label + '</label>'
+                        + '<input name="' + f.key + '" readonly style="width:100%;padding:5px 8px;border:1px solid #e0e0e0;'
+                        + 'border-radius:6px;font-size:0.78rem;background:#f9f9f9;box-sizing:border-box;color:#555;"/></div>';
+                }).join("");
+
+                var derivedHtml = (config.derived || []).map(function (f) {
+                    var isDisabled = f.key === "OPT_QTY";
+                    return '<div style="margin-bottom:8px;">'
+                        + '<label style="font-size:0.72rem;color:#555;display:block;margin-bottom:3px;">' + f.label + '</label>'
+                        + '<input name="' + f.key + '" type="number" step="any"'
+                        + (isDisabled ? ' disabled' : '')
+                        + ' style="width:100%;padding:5px 8px;border:1px solid #' + (isDisabled ? 'e0e0e0' : 'ccc') + ';border-radius:6px;font-size:0.78rem;background:' + (isDisabled ? '#f9f9f9' : '#fff') + ';box-sizing:border-box;"/></div>';
+                }).join("")
+                + (config.distributionFilter
+                    ? '<div style="margin-top:10px;padding-top:8px;border-top:1px solid #eee;margin-bottom:8px;">'
+                      + '<label style="font-size:0.72rem;color:#555;display:block;margin-bottom:3px;">' + config.distributionFilter.label + '</label>'
+                      + '<select name="' + config.distributionFilter.key + '" style="width:100%;padding:5px 8px;border:1px solid #ccc;border-radius:6px;font-size:0.78rem;background:#fff;box-sizing:border-box;">'
+                      + config.distributionFilter.options.map(function (o) { return '<option value="' + o.value + '">' + o.label + '</option>'; }).join("")
+                      + '</select></div>'
+                    : "");
+
+                var optionalFiltersHtml = (config.optionalFilters || []).map(function (f) {
+                    return '<div style="margin-bottom:8px;">'
+                        + '<label style="font-size:0.72rem;color:#555;display:block;margin-bottom:3px;">' + f.label + '</label>'
+                        + '<select name="' + f.key + '" style="width:100%;padding:5px 8px;border:1px solid #ccc;border-radius:6px;font-size:0.78rem;background:#fff;box-sizing:border-box;">'
+                        + '<option value="' + f.defaultVal + '">' + f.defaultVal + '</option>'
+                        + '</select></div>';
+                }).join("");
+
+                var formHtml = '<div id="' + formId + '" style="padding:4px 0;">'
+                    + '<div style="font-size:0.78rem;font-weight:600;margin-bottom:10px;color:#0a6ed1;">' + intentName + ' — Please provide filters:</div>'
+                    + cascadeHtml
+                    + (optionalFiltersHtml ? '<div style="border-top:1px solid #eee;margin-top:8px;padding-top:8px;">' + optionalFiltersHtml + '</div>' : '')
+                    + '<div id="' + formId + '_autoFill" style="display:none;border-top:1px solid #eee;margin-top:8px;padding-top:8px;">' + autoFillHtml + '</div>'
+                    + '<div id="' + formId + '_derived" style="display:none;">' + derivedHtml + '</div>'
+                    + '<button id="' + formId + '_submit"'
+                    + ' style="display:none;background:#0a6ed1;color:white;border:none;padding:7px 18px;border-radius:6px;'
+                    + 'cursor:pointer;font-size:0.78rem;margin-top:8px;width:100%;">Submit</button></div>';
+
+                oVBox.addItem(new HBox({
+                    items: [
+                        new Image({ src: that.logoPath, width: "28px", height: "28px" }),
+                        new sap.ui.core.HTML({ content: '<div class="chatBotBubble" style="width:280px;">' + formHtml + '</div>' })
+                    ]
+                }).addStyleClass("chatBotMessageRow"));
+                sap.ui.getCore().applyChanges();
+                scrollDown(true);
+
+                // Attach event listeners (CSP: no inline handlers allowed)
+                config.cascade.forEach(function (f, idx) {
+                    var sel = document.querySelector("#" + formId + " [name='" + f.key + "']");
+                    if (sel) {
+                        sel.addEventListener("change", function () {
+                            window._onCascadeChange(formId, intentName, idx);
+                        });
+                    }
+                });
+                var optPctInp = document.querySelector("#" + formId + " [name='OPT_PERCENT']");
+                if (optPctInp) {
+                    optPctInp.addEventListener("input", function () { window._onOptPercentChange(formId); });
+                }
+                var submitBtnEl = document.getElementById(formId + "_submit");
+                if (submitBtnEl) {
+                    submitBtnEl.addEventListener("click", function () { window._submitFilterForm(formId, intentName); });
+                }
+
+                // Load first cascade dropdown
+                var firstField = config.cascade[0];
+                var firstSel = document.querySelector("#" + formId + " [name='" + firstField.key + "']");
+                if (firstSel) {
+                    firstSel.innerHTML = '<option value="">Loading...</option>';
+                    that.oModel.read("/" + config.entitySet, {
+                        urlParameters: Object.assign({ "$top": "30000" }, config.baseFilter ? { "$filter": config.baseFilter } : {}),
+                        success: function (oData) {
+                            var seen = {}, unique = [];
+                            (oData.results || []).forEach(function (r) {
+                                var v = r[firstField.key];
+                                if (v !== null && v !== undefined && v !== "" && !seen[v]) { seen[v] = true; unique.push(String(v)); }
+                            });
+                            unique.sort();
+                            var opts = '<option value="">-- Select --</option>';
+                            unique.forEach(function (v) { opts += '<option value="' + v + '">' + v + '</option>'; });
+                            firstSel.innerHTML = opts;
+                        },
+                        error: function () { firstSel.innerHTML = '<option value="">Error loading</option>'; }
+                    });
+                }
+
+                // Load optional filter dropdowns (VERSION, SCENARIO, MODEL_VERSION) — default pre-selected
+                (config.optionalFilters || []).forEach(function (f) {
+                    var sel = document.querySelector("#" + formId + " [name='" + f.key + "']");
+                    if (!sel) return;
+                    that.oModel.read("/" + config.entitySet, {
+                        urlParameters: Object.assign({ "$top": "30000" }, config.baseFilter ? { "$filter": config.baseFilter } : {}),
+                        success: function (oData) {
+                            var seen = {}, unique = [];
+                            (oData.results || []).forEach(function (r) {
+                                var v = r[f.key];
+                                if (v !== null && v !== undefined && v !== "" && !seen[v]) { seen[v] = true; unique.push(String(v)); }
+                            });
+                            unique.sort();
+                            var opts = "";
+                            unique.forEach(function (v) {
+                                opts += '<option value="' + v + '"' + (v === f.defaultVal ? " selected" : "") + ">" + v + "</option>";
+                            });
+                            if (!unique.length || unique.indexOf(f.defaultVal) === -1) {
+                                opts = '<option value="' + f.defaultVal + '" selected>' + f.defaultVal + '</option>' + opts;
+                            }
+                            sel.innerHTML = opts;
+                        },
+                        error: function () { /* keep the pre-rendered default option */ }
+                    });
+                });
+            }
+
+            window._onCascadeChange = function (formId, intentName, changedIndex) {
+                var config = window._intentFilterConfig[intentName];
+                if (!config) return;
+                var cascade = config.cascade;
+                var form = document.getElementById(formId);
+                if (!form) return;
+
+                var currentSel = form.querySelector("[name='" + cascade[changedIndex].key + "']");
+                var currentVal = currentSel ? currentSel.value : "";
+
+                // Reset all dropdowns after the changed one
+                for (var i = changedIndex + 1; i < cascade.length; i++) {
+                    var s = form.querySelector("[name='" + cascade[i].key + "']");
+                    if (s) { s.innerHTML = '<option value="">-- Select --</option>'; s.disabled = true; s.style.background = "#f5f5f5"; }
+                }
+                var autoFillDiv = document.getElementById(formId + "_autoFill");
+                var derivedDiv  = document.getElementById(formId + "_derived");
+                var submitBtn   = document.getElementById(formId + "_submit");
+                if (autoFillDiv) autoFillDiv.style.display = "none";
+                if (derivedDiv)  derivedDiv.style.display  = "none";
+                if (submitBtn)   submitBtn.style.display   = "none";
+                if (!currentVal) return;
+
+                // Build OData $filter from all selections up to and including changedIndex
+                var filterParts = [];
+                for (var j = 0; j <= changedIndex; j++) {
+                    var f = cascade[j];
+                    var sel = form.querySelector("[name='" + f.key + "']");
+                    var val = sel ? sel.value : "";
+                    if (val) {
+                        filterParts.push(
+                            f.type === "datetime"
+                                ? f.key + " eq datetime'" + val + "'"
+                                : f.key + " eq '" + val.replace(/'/g, "''") + "'"
+                        );
+                    }
+                }
+                var cascadeFilter = filterParts.join(" and ");
+                var filterStr = config.baseFilter
+                    ? (cascadeFilter ? config.baseFilter + " and " + cascadeFilter : config.baseFilter)
+                    : cascadeFilter;
+                var nextIndex = changedIndex + 1;
+
+                if (nextIndex < cascade.length) {
+                    var nextField = cascade[nextIndex];
+                    var nextSel = form.querySelector("[name='" + nextField.key + "']");
+                    console.log("[Cascade] changedIndex=" + changedIndex + " nextField=" + nextField.key + " nextSel=" + nextSel + " filterStr=" + filterStr);
+                    if (nextSel) {
+                        nextSel.innerHTML = '<option value="">Loading...</option>';
+                        nextSel.disabled = true;
+                        (function (capturedFormId, capturedFieldKey, capturedFilterStr) {
+                            console.log("[Cascade] OData read start for " + capturedFieldKey + " filter=" + capturedFilterStr);
+                            that.oModel.read("/" + config.entitySet, {
+                                urlParameters: { "$filter": capturedFilterStr, "$top": "30000" },
+                                success: function (oData) {
+                                    console.log("[Cascade] OData success for " + capturedFieldKey + " results=" + (oData.results || []).length);
+                                    var f2 = document.getElementById(capturedFormId);
+                                    var s2 = f2 ? f2.querySelector("[name='" + capturedFieldKey + "']") : null;
+                                    if (!s2) { console.warn("[Cascade] select not found after read"); return; }
+                                    var seen2 = {}, unique2 = [];
+                                    (oData.results || []).forEach(function (r) {
+                                        var v = r[capturedFieldKey];
+                                        if (v !== null && v !== undefined && v !== "" && !seen2[v]) { seen2[v] = true; unique2.push(String(v)); }
+                                    });
+                                    unique2.sort();
+                                    var opts2 = '<option value="">-- Select --</option>';
+                                    unique2.forEach(function (v) { opts2 += '<option value="' + v + '">' + v + '</option>'; });
+                                    s2.innerHTML = opts2;
+                                    s2.disabled = false;
+                                    s2.style.background = "#fff";
+                                },
+                                error: function (oErr) {
+                                    console.error("[Cascade] OData error for " + capturedFieldKey, oErr);
+                                    var f2 = document.getElementById(capturedFormId);
+                                    var s2 = f2 ? f2.querySelector("[name='" + capturedFieldKey + "']") : null;
+                                    if (!s2) return;
+                                    s2.innerHTML = '<option value="">-- Error --</option>';
+                                    s2.disabled = false;
+                                    s2.style.background = "#fff";
+                                }
+                            });
+                        })(formId, nextField.key, filterStr);
+                    }
+                } else {
+                    // All cascade fields selected — fetch matching row to pre-fill autoFill + derived
+                    that.oModel.read("/" + config.entitySet, {
+                        urlParameters: { "$filter": filterStr + " and TYPE eq 1000", "$top": "1" },
+                        success: function (oData) {
+                            var row = oData.results && oData.results[0];
+                            if (config.autoFill) {
+                                config.autoFill.forEach(function (af) {
+                                    var inp = form.querySelector("[name='" + af.key + "']");
+                                    if (inp) inp.value = (row && row[af.key] !== undefined && row[af.key] !== null) ? toDateStr(row[af.key]) : "";
+                                });
+                                if (autoFillDiv) autoFillDiv.style.display = "block";
+                            }
+                            if (config.derived) {
+                                config.derived.forEach(function (df) {
+                                    var inp = form.querySelector("[name='" + df.key + "']");
+                                    if (inp) inp.value = (row && row[df.key] !== undefined && row[df.key] !== null) ? row[df.key] : "";
+                                });
+                                // Store originals for OPT_QTY formula
+                                if (row) {
+                                    form.dataset.origOptPercent = row.OPT_PERCENT !== undefined ? row.OPT_PERCENT : "";
+                                    form.dataset.origOptQty     = row.OPT_QTY     !== undefined ? row.OPT_QTY     : "";
+                                }
+                                if (derivedDiv) derivedDiv.style.display = "block";
+                            }
+                            if (submitBtn) submitBtn.style.display = "block";
+                        },
+                        error: function () {
+                            if (derivedDiv) derivedDiv.style.display = "block";
+                            if (submitBtn) submitBtn.style.display = "block";
+                        }
+                    });
+                }
+            };
+
+            window._onOptPercentChange = function (formId) {
+                var form = document.getElementById(formId);
+                if (!form) return;
+                var newPct  = parseFloat(form.querySelector("[name='OPT_PERCENT']").value);
+                var origPct = parseFloat(form.dataset.origOptPercent);
+                var origQty = parseFloat(form.dataset.origOptQty);
+                if (isNaN(newPct) || !origPct || isNaN(origQty)) return;
+                var newQty = (newPct / origPct) * origQty;
+                var optQtyInp = form.querySelector("[name='OPT_QTY']");
+                if (optQtyInp) optQtyInp.value = Math.round(newQty * 100) / 100;
+            };
+
+            window._submitFilterForm = function (formId, intentName) {
+                var config = window._intentFilterConfig[intentName];
+                if (!config) return;
+                var form = document.getElementById(formId);
+                if (!form) return;
+                var params = {}, valid = true;
+
+                config.cascade.forEach(function (f) {
+                    var sel = form.querySelector("[name='" + f.key + "']");
+                    if (sel) {
+                        var v = sel.value.trim();
+                        if (!v) { sel.style.border = "1px solid red"; valid = false; }
+                        else { sel.style.border = "1px solid #ccc"; params[f.key] = v; }
+                    }
+                });
+                (config.autoFill || []).forEach(function (f) {
+                    var inp = form.querySelector("[name='" + f.key + "']");
+                    if (inp && inp.value) params[f.key] = inp.value;
+                });
+                (config.derived || []).forEach(function (f) {
+                    var inp = form.querySelector("[name='" + f.key + "']");
+                    if (inp) {
+                        var v = inp.value.trim();
+                        if (inp.disabled) { if (v) params[f.key] = v; }
+                        else {
+                            if (!v) { inp.style.border = "1px solid red"; valid = false; }
+                            else { inp.style.border = "1px solid #ccc"; params[f.key] = v; }
+                        }
+                    }
+                });
+                (config.optionalFilters || []).forEach(function (f) {
+                    var sel = form.querySelector("[name='" + f.key + "']");
+                    if (sel) params[f.key] = sel.value || f.defaultVal;
+                });
+                if (config.distributionFilter) {
+                    var distSel = form.querySelector("[name='" + config.distributionFilter.key + "']");
+                    if (distSel) params[config.distributionFilter.key] = distSel.value;
+                }
+                if (!valid) return;
+                params.DATE_TIME = new Date().toISOString();
+
+                // Disable form while loading preview
+                form.querySelectorAll("input,select,button").forEach(function (el) { el.disabled = true; });
+
+                // Fetch all CHARVAL_NUM rows for the same CHAR_NAME to compute distribution
+                var filterParts = config.baseFilter ? [config.baseFilter] : [];
+                filterParts.push("TYPE eq 1000");
+                ["LOCATION_ID", "PRODUCT_ID", "CUSTOMER_GROUP", "CHAR_NAME", "TELESCOPIC_WEEK"].forEach(function (key) {
+                    if (params[key]) filterParts.push(key + " eq '" + params[key].replace(/'/g, "''") + "'");
+                });
+                (config.optionalFilters || []).forEach(function (f) {
+                    if (params[f.key]) filterParts.push(f.key + " eq '" + (params[f.key] || "").replace(/'/g, "''") + "'");
+                });
+
+                that.oModel.read("/" + config.entitySet, {
+                    urlParameters: { "$filter": filterParts.join(" and ") },
+                    success: function (oData) {
+                        _showDistributionPreview(formId, intentName, params, oData.results || []);
+                    },
+                    error: function () {
+                        form.querySelectorAll("input,select,button").forEach(function (el) { el.disabled = false; });
+                    }
+                });
+            };
+
+            function _showDistributionPreview(formId, intentName, params, allRows) {
+                var oVBox = sap.ui.getCore().byId("chatMessages");
+                var selectedCharVal = params["CHARVAL_NUM"];
+                var newPct = parseFloat(params["OPT_PERCENT"]);
+                var distMethod = params["DISTRIBUTION_METHOD"];
+
+                var selectedRow = null;
+                for (var i = 0; i < allRows.length; i++) {
+                    if (String(allRows[i].CHARVAL_NUM) === String(selectedCharVal)) { selectedRow = allRows[i]; break; }
+                }
+                var oldPct = selectedRow ? parseFloat(selectedRow.OPT_PERCENT) : newPct;
+                var delta = newPct - oldPct;
+                var others = allRows.filter(function (r) { return String(r.CHARVAL_NUM) !== String(selectedCharVal); });
+                var sumOthersPct = others.reduce(function (s, r) { return s + (parseFloat(r.OPT_PERCENT) || 0); }, 0);
+
+                var previewRows = [];
+                previewRows.push({
+                    charVal: selectedCharVal,
+                    charNum: selectedRow ? String(selectedRow.CHAR_NUM || "") : "",
+                    oldPct: oldPct, newPct: Math.round(newPct * 100) / 100,
+                    oldQty: selectedRow ? parseFloat(selectedRow.OPT_QTY) || 0 : 0,
+                    newQty: Math.round((parseFloat(params["OPT_QTY"]) || 0) * 100) / 100,
+                    oldPctStr: String(oldPct),
+                    isSelected: true
+                });
+                var equalSharePct = Math.round((100 - newPct) / (others.length || 1) * 100) / 100;
+
+                others.forEach(function (r) {
+                    var oPct = parseFloat(r.OPT_PERCENT) || 0;
+                    var oQty = parseFloat(r.OPT_QTY) || 0;
+                    var nPct = distMethod === "EQUAL"
+                        ? equalSharePct
+                        : (sumOthersPct ? oPct - (oPct / sumOthersPct) * delta : oPct);
+                    nPct = Math.round(nPct * 100) / 100;
+                    var nQty = oPct ? Math.round((nPct / oPct) * oQty * 100) / 100 : oQty;
+                    previewRows.push({
+                        charVal: r.CHARVAL_NUM,
+                        charNum: String(r.CHAR_NUM || ""),
+                        oldPct: oPct, newPct: nPct, oldQty: oQty, newQty: nQty,
+                        oldPctStr: String(oPct),
+                        isSelected: false
+                    });
+                });
+
+                var previewId = "preview_" + Date.now();
+                window._previewData = window._previewData || {};
+                window._previewData[previewId] = { formId: formId, intentName: intentName, params: params, rows: previewRows };
+
+                var distLabel = distMethod === "EQUAL" ? "Equal Distribution" : "Prorate Distribution";
+                var tableHtml = '<div style="font-size:0.72rem;">'
+                    + '<div style="font-weight:600;margin-bottom:8px;color:#0a6ed1;">Distribution Preview — ' + distLabel + '</div>'
+                    + '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:0.68rem;">'
+                    + '<thead><tr style="background:#e8f0fe;">'
+                    + '<th style="padding:4px 5px;text-align:left;border:1px solid #ddd;">Char Value</th>'
+                    + '<th style="padding:4px 5px;text-align:right;border:1px solid #ddd;">Old %</th>'
+                    + '<th style="padding:4px 5px;text-align:right;border:1px solid #ddd;">New %</th>'
+                    + '<th style="padding:4px 5px;text-align:right;border:1px solid #ddd;">Old Qty</th>'
+                    + '<th style="padding:4px 5px;text-align:right;border:1px solid #ddd;">New Qty</th>'
+                    + '</tr></thead><tbody>';
+
+                previewRows.forEach(function (row) {
+                    var bg = row.isSelected ? "#fff8e1" : "#fff";
+                    var changed = row.newPct !== row.oldPct;
+                    var color = row.newPct > row.oldPct ? "#2e7d32" : (row.newPct < row.oldPct ? "#c62828" : "#333");
+                    var fw = changed ? "600" : "normal";
+                    tableHtml += '<tr style="background:' + bg + ';">'
+                        + '<td style="padding:4px 5px;border:1px solid #ddd;">' + row.charVal + (row.isSelected ? " ✎" : "") + '</td>'
+                        + '<td style="padding:4px 5px;text-align:right;border:1px solid #ddd;">' + row.oldPct + '</td>'
+                        + '<td style="padding:4px 5px;text-align:right;border:1px solid #ddd;color:' + color + ';font-weight:' + fw + ';">' + row.newPct + '</td>'
+                        + '<td style="padding:4px 5px;text-align:right;border:1px solid #ddd;">' + row.oldQty + '</td>'
+                        + '<td style="padding:4px 5px;text-align:right;border:1px solid #ddd;color:' + color + ';font-weight:' + fw + ';">' + row.newQty + '</td>'
+                        + '</tr>';
+                });
+
+                tableHtml += '</tbody></table></div>'
+                    + '<div style="display:flex;gap:8px;margin-top:10px;">'
+                    + '<button id="' + previewId + '_confirm"'
+                    + ' style="flex:1;background:#0a6ed1;color:#fff;border:none;padding:7px;border-radius:6px;cursor:pointer;font-size:0.78rem;font-weight:600;">Confirm &amp; Send</button>'
+                    + '<button id="' + previewId + '_cancel"'
+                    + ' style="flex:1;background:#fff;color:#0a6ed1;border:1px solid #0a6ed1;padding:7px;border-radius:6px;cursor:pointer;font-size:0.78rem;">Edit</button>'
+                    + '</div></div>';
+
+                oVBox.addItem(new HBox({
+                    items: [
+                        new Image({ src: that.logoPath, width: "28px", height: "28px" }),
+                        new sap.ui.core.HTML({ content: '<div id="' + previewId + '" class="chatBotBubble" style="width:310px;">' + tableHtml + '</div>' })
+                    ]
+                }).addStyleClass("chatBotMessageRow"));
+                sap.ui.getCore().applyChanges();
+                scrollDown(true);
+
+                // Attach confirm/cancel listeners (CSP: no inline handlers)
+                var confirmBtnEl = document.getElementById(previewId + "_confirm");
+                if (confirmBtnEl) {
+                    confirmBtnEl.addEventListener("click", function () { window._confirmFilterSubmit(previewId); });
+                }
+                var cancelBtnEl = document.getElementById(previewId + "_cancel");
+                if (cancelBtnEl) {
+                    cancelBtnEl.addEventListener("click", function () { window._cancelFilterSubmit(previewId); });
+                }
+            }
+
+            window._confirmFilterSubmit = function (previewId) {
+                var data = (window._previewData || {})[previewId];
+                if (!data) return;
+                var previewEl = document.getElementById(previewId);
+                if (previewEl) previewEl.querySelectorAll("button").forEach(function (b) { b.disabled = true; });
+
+                var params = data.params;
+                var currentUser = that.getUser ? that.getUser() : "";
+                var now = new Date();
+
+                var optData = data.rows.map(function (r, idx) {
+                    var dt = new Date(now.getTime() + idx).toISOString();
+                    return {
+                        LOCATION_ID:    params.LOCATION_ID,
+                        PRODUCT_ID:     params.PRODUCT_ID,
+                        CUSTOMER_GROUP: params.CUSTOMER_GROUP,
+                        CLASS_NUM:      "NA",
+                        CHAR_NUM:       r.charNum,
+                        CHARVAL_NUM:    r.charVal,
+                        VERSION:        params.VERSION,
+                        SCENARIO:       params.SCENARIO,
+                        MODEL_VERSION:  params.MODEL_VERSION,
+                        TYPE:           3,
+                        OPT_PERCENT:    r.newPct,
+                        COMMENTS:       "",
+                        OLD_VALUE:      r.oldPctStr,
+                        DATE_TIME:      dt,
+                        USER:           currentUser,
+                        TELESCOPIC_WEEK: params.TELESCOPIC_WEEK,
+                        LOCK:           false,
+                        OPT_QTY:        r.newQty,
+                        WEEK_STARTDATE: params.PERIODSTART || "",
+                        WEEK_ENDDATE:   params.PERIODEND   || ""
+                    };
+                });
+
+                that.oModel.callFunction("/saveOptionPercentData", {
+                    method: "GET",
+                    urlParameters: { optData: JSON.stringify(optData) },
+                    success: function () {
+                        var oVBox = sap.ui.getCore().byId("chatMessages");
+                        oVBox.addItem(new HBox({
+                            items: [
+                                new Image({ src: that.logoPath, width: "28px", height: "28px" }),
+                                new Text({ text: "Option mix planning data saved successfully." }).addStyleClass("chatBotBubble")
+                            ]
+                        }).addStyleClass("chatBotMessageRow"));
+                        sap.ui.getCore().applyChanges();
+                        scrollDown(true);
+                    },
+                    error: function (oErr) {
+                        var msg = "Failed to save data. Please try again.";
+                        try {
+                            var body = JSON.parse(oErr.responseText);
+                            msg = (body.error && body.error.message && body.error.message.value) || msg;
+                        } catch (e) {}
+                        var oVBox = sap.ui.getCore().byId("chatMessages");
+                        oVBox.addItem(new HBox({
+                            items: [
+                                new Image({ src: that.logoPath, width: "28px", height: "28px" }),
+                                new Text({ text: msg }).addStyleClass("chatBotBubble")
+                            ]
+                        }).addStyleClass("chatBotMessageRow"));
+                        sap.ui.getCore().applyChanges();
+                        scrollDown(true);
+                    }
+                });
+                delete window._previewData[previewId];
+            };
+
+            window._cancelFilterSubmit = function (previewId) {
+                var data = (window._previewData || {})[previewId];
+                if (!data) return;
+                // Re-enable the filter form
+                var form = document.getElementById(data.formId);
+                if (form) {
+                    form.querySelectorAll("input,select").forEach(function (el) { el.disabled = false; });
+                    var submitBtn = document.getElementById(data.formId + "_submit");
+                    if (submitBtn) submitBtn.disabled = false;
+                }
+                // Remove preview card from chat
+                var oVBox = sap.ui.getCore().byId("chatMessages");
+                var previewEl = document.getElementById(previewId);
+                if (previewEl && oVBox) {
+                    oVBox.getItems().forEach(function (item) {
+                        if (item.getDomRef && item.getDomRef() && item.getDomRef().contains(previewEl)) {
+                            oVBox.removeItem(item);
+                            item.destroy();
+                        }
+                    });
+                    sap.ui.getCore().applyChanges();
+                }
+                delete window._previewData[previewId];
+            };
+
             function sendMessage(sMsg) {
                 if (!sMsg) return;
                 const oVBox = sap.ui.getCore().byId("chatMessages");
-                oVBox.addItem(new Text({ text: sMsg }).addStyleClass("chatUserBubble"));
+                const escapedMsg = sMsg.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+                oVBox.addItem(new sap.ui.core.HTML({
+                    content: `<div class="chatUserMessageRow"><span class="chatUserBubble">${escapedMsg}</span></div>`
+                }));
                 that.currentMessages.push({ role: "user", text: sMsg });
                 sap.ui.getCore().applyChanges();
                 scrollDown();
@@ -559,11 +1133,14 @@ sap.ui.define([
                     const urlFinal = that.URL + "/ask";
 
                     function doAjax() {
+                        const history = that.currentMessages
+                            .filter(function (m) { return m.role === "user" || m.role === "bot"; })
+                            .map(function (m) { return { role: m.role === "user" ? "user" : "assistant", content: m.text || m.html || "" }; });
                         return $.ajax({
                             url: urlFinal,
                             method: "POST",
                             contentType: "application/json",
-                            data: JSON.stringify({ query: sMsg, userid: userId }),
+                            data: JSON.stringify({ query: sMsg, userid: userId, session_id: that.currentSessionId, messages: history }),
                             headers: { Authorization: that.token }
                         });
                     }
@@ -601,11 +1178,54 @@ sap.ui.define([
                         }
                     }
 
+                    // Fetch images before removing typing indicator so everything renders at once
+                    var imagesByPageId = {};
+                    if (data && Array.isArray(data.page_references) && data.page_references.length > 0) {
+                        await Promise.all(data.page_references.map(function (ref) {
+                    //    await Promise.all(refPages.map(function (pageId) {     
+                        return $.ajax({
+                                url: "https://vcprag.cfapps.us10-001.hana.ondemand.com/images?page_id=" + ref.page_id,
+                                method: "GET",
+                                // headers: { Authorization: that.token }
+                            }).then(function (imgData) {
+                                const arr = Array.isArray(imgData) ? imgData : (imgData.images || [imgData]);
+                                imagesByPageId[ref.page_id] = arr.map(function (item) {
+                                    if (typeof item === "string") return { src: item, description: "" };
+                                    return {
+                                        src: item.base64 || item.image || item.data || "",
+                                        description: item.description || item.caption || item.text || item.title || ""
+                                    };
+                                }).filter(function (item) { return !!item.src; });
+                            }).catch(function () {
+                                imagesByPageId[ref.page_id] = [];
+                            });
+                        }));
+                    }
+
                     removeTyping();
+
+                    const responseText = (data && data.response) ? data.response.trim() : "";
+                    const detectedIntent = (data && data.intent) ||
+                        Object.keys(INTENT_FILTERS).find(function (k) { return responseText.includes(k); });
+
+                    if (detectedIntent && INTENT_FILTERS[detectedIntent]) {
+                        if (responseText) {
+                            const oBotVBox = new VBox().addStyleClass("chatBotBubble");
+                            oBotVBox.addItem(new sap.m.FormattedText({ htmlText: responseText }));
+                            oVBox.addItem(new HBox({
+                                items: [new Image({ src: that.logoPath, width: "28px", height: "28px" }), oBotVBox]
+                            }).addStyleClass("chatBotMessageRow"));
+                            that.currentMessages.push({ role: "bot", text: responseText });
+                        }
+                        showFilterForm(detectedIntent, INTENT_FILTERS[detectedIntent]);
+                        that._saveCurrentSession();
+                        sap.ui.getCore().applyChanges();
+                        return;
+                    }
+
                     const oBotVBox = new VBox().addStyleClass("chatBotBubble");
 
-                    if (data && data.response) {
-                        const responseText = data.response.trim();
+                    if (responseText) {
                         if (responseText.includes("<table")) {
                             oBotVBox.addItem(new sap.ui.core.HTML({ content: responseText }));
                         } else {
@@ -621,6 +1241,19 @@ sap.ui.define([
                         oBotVBox.addItem(new sap.ui.core.HTML({ content: data.table }));
                     }
 
+                    Object.values(imagesByPageId).forEach(function (images) {
+                        images.forEach(function (item) {
+                            if (!item.src) return;
+                            var html = '<div style="margin-top:8px;">'
+                                + '<img src="' + item.src + '" style="max-width:100%;border-radius:4px;display:block;cursor:pointer;" onclick="this.style.maxWidth=this.style.maxWidth===\'100%\'?\'none\':\'100%\'"/>';
+                            if (item.description) {
+                                html += '<div style="font-size:0.72rem;color:#666;margin-top:4px;font-style:italic;">' + item.description + '</div>';
+                            }
+                            html += '</div>';
+                            oBotVBox.addItem(new sap.ui.core.HTML({ content: html }));
+                        });
+                    });
+
                     oVBox.addItem(new HBox({
                         items: [
                             new Image({ src: that.logoPath, width: "28px", height: "28px" }),
@@ -628,11 +1261,10 @@ sap.ui.define([
                         ]
                     }).addStyleClass("chatBotMessageRow"));
 
-                    if (data && data.response) {
-                        const rText = data.response.trim();
-                        const msgEntry = rText.includes("<table")
-                            ? { role: "bot", html: rText }
-                            : { role: "bot", text: rText.startsWith("An unexpected error") ? "Sorry, I ran into an internal error. Please try again later." : rText };
+                    if (responseText) {
+                        const msgEntry = responseText.includes("<table")
+                            ? { role: "bot", html: responseText }
+                            : { role: "bot", text: responseText.startsWith("An unexpected error") ? "Sorry, I ran into an internal error. Please try again later." : responseText };
                         if (data.table) msgEntry.table = data.table;
                         that.currentMessages.push(msgEntry);
                     }
@@ -728,7 +1360,10 @@ sap.ui.define([
                         ]
                     }).addStyleClass("chatBotMessageRow"));
                 } else if (msg.role === "user") {
-                    oVBox.addItem(new Text({ text: msg.text }).addStyleClass("chatUserBubble"));
+                    const escapedText = (msg.text || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+                    oVBox.addItem(new sap.ui.core.HTML({
+                        content: `<div class="chatUserMessageRow"><span class="chatUserBubble">${escapedText}</span></div>`
+                    }));
                 } else if (msg.role === "bot") {
                     const oBotVBox = new VBox().addStyleClass("chatBotBubble");
                     if (msg.html) oBotVBox.addItem(new sap.ui.core.HTML({ content: msg.html }));
@@ -813,11 +1448,14 @@ sap.ui.define([
                 #chatbot-panel.open { opacity: 1; transform: translateY(0); pointer-events: auto; }
                 #chatbot-panel.closed { opacity: 0; transform: translateY(20px); pointer-events: none; }
 
+                .chatUserMessageRow {
+                    width: 100%; display: flex; justify-content: flex-end; padding: 2px 0;
+                }
                 .chatUserBubble {
                     background: #0a6ed1; color: white; padding: 8px 12px;
                     border-radius: 12px; margin: 4px; max-width: 70%;
-                    align-self: flex-end; word-wrap: break-word;
-                    width: fit-content; font-size: 0.78rem;
+                    overflow-wrap: break-word; word-break: normal;
+                    font-size: 0.78rem; white-space: pre-wrap;
                 }
 
                 .chatBotBubble {
